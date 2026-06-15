@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PUNCH ARCADE</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+  :root{
+    --cab-blue-1:#7ea6f2;
+    --cab-blue-2:#3f64c9;
+    --cab-blue-3:#1c2f63;
+    --bezel:#0c0c14;
+    --screen-bg:#0a0c10;
+    --screen-glow:#9be8ff;
+    --marquee-bg:#eef3ff;
+    --panel:#d6d2c4;
+    --panel-dark:#b9b4a4;
+    --key:#f3f0e6;
+    --key-shadow:#9c988a;
+    --ink:#1a1a1a;
+    --yellow:#ffe14d;
+    --green:#4fbf4f;
+    --green-dark:#2d8a2d;
+    --red:#e6453c;
+    --red-dark:#a8281f;
+    --blue-btn:#3a6df0;
+    --blue-btn-dark:#1f3fa8;
+    --yellow-btn:#ffd23f;
+    --yellow-btn-dark:#c79c10;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{ height:100%; }
+
+  body{
+    margin:0;
+    font-family:'VT323', monospace;
+    background:#11151c;
+    background-image:
+      radial-gradient(circle at 50% 0%, #2a3550 0%, #11151c 60%);
+    color:var(--ink);
+    min-height:100vh;
+  }
+
+  /* ============ Shared cabinet chrome ============ */
+  .marquee{
+    background:var(--marquee-bg);
+    border:4px solid var(--bezel);
+    border-radius:8px;
+    padding:14px 18px;
+    text-align:center;
+    margin-bottom:14px;
+    position:relative;
+    box-shadow: inset 0 0 0 2px #fff;
+  }
+  .marquee::before, .marquee .corner-bl{
+    content:"";
+    position:absolute;
+    width:10px; height:10px;
+    border:2px solid var(--bezel);
+    border-radius:50%;
+    background:#fff;
+  }
+  .marquee::before{ top:6px; left:6px; }
+  .marquee .corner-bl{ bottom:6px; left:6px; }
+
+  .marquee-title{
+    font-family:'Press Start 2P', monospace;
+    font-size:clamp(20px, 4vw, 30px);
+    letter-spacing:2px;
+    color:var(--ink);
+    margin:4px 0 10px;
+  }
+  .marquee-title span.punch{
+    background:var(--yellow);
+    padding:2px 10px;
+    border:3px solid var(--ink);
+    border-radius:4px;
+    box-shadow:3px 3px 0 var(--ink);
+    display:inline-block;
+    transform:rotate(-2deg);
+  }
+  .marquee-sub{
+    background:#9be36b;
+    border:2px solid var(--ink);
+    border-radius:4px;
+    padding:6px 8px;
+    font-family:'Press Start 2P', monospace;
+    font-size:10px;
+    letter-spacing:1px;
+    margin-bottom:6px;
+  }
+  .marquee-sub2{
+    font-size:14px;
+    letter-spacing:1px;
+    color:#444;
+  }
+
+  .screen-housing{
+    background:#1b2540;
+    border:5px solid var(--bezel);
+    border-radius:10px;
+    padding:10px;
+    position:relative;
+  }
+  .speaker{
+    position:absolute;
+    top:50%; transform:translateY(-50%);
+    width:34px; height:34px;
+    border-radius:50%;
+    background:
+      radial-gradient(circle, transparent 0 3px, var(--ink) 3px 4px, transparent 4px),
+      repeating-conic-gradient(var(--ink) 0deg 6deg, transparent 6deg 18deg);
+    opacity:0.55;
+  }
+  .speaker.left{ left:-20px; }
+  .speaker.right{ right:-20px; }
+
+  .screen{
+    background:var(--screen-bg);
+    border-radius:6px;
+    width:100%;
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    align-items:stretch;
+    justify-content:center;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.9), inset 0 0 4px var(--screen-glow);
+  }
+  .screen-stage{
+    position:relative;
+    width:100%;
+    height:100%;
+    align-self:stretch;
+    flex:1;
+    display:flex;
+  }
+  .collage-area{
+    position:relative;
+    flex:1;
+    height:100%;
+    overflow:hidden;
+  }
+  .side-panel{
+    position:relative;
+    flex:0 0 35%;
+    height:100%;
+    background:#f4ecdf;
+    overflow:hidden;
+    display:none;
+    border-left:2px solid #2a3550;
+  }
+  .side-panel.active{ display:block; }
+  .side-panel canvas{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+  }
+  .collage-wrap{
+    position:relative;
+    width:100%;
+    height:100%;
+  }
+  .collage-cell{
+    position:absolute;
+    overflow:hidden;
+    background:#05070a;
+    border:2px solid #2a3550;
+  }
+  .collage-cell canvas{
+    width:100%; height:100%;
+    display:block;
+    object-fit:cover;
+    image-rendering:pixelated;
+  }
+  .collage-cell .cell-controls{
+    position:absolute;
+    top:4px; right:4px;
+    display:flex;
+    gap:4px;
+    opacity:0;
+    transition:opacity .15s;
+    z-index:5;
+  }
+  .collage-cell:hover .cell-controls{ opacity:1; }
+  .cell-controls button{
+    width:22px; height:22px;
+    font-family:'Press Start 2P', monospace;
+    font-size:9px;
+    border:2px solid var(--ink);
+    border-radius:4px;
+    background:var(--key);
+    cursor:pointer;
+    line-height:1;
+    box-shadow:1px 1px 0 var(--ink);
+  }
+  .cell-resizer{
+    position:absolute;
+    background:#000;
+    z-index:4;
+  }
+  .cell-resizer.col{
+    width:6px;
+    cursor:col-resize;
+    top:0; bottom:0;
+  }
+  .cell-resizer.row{
+    height:6px;
+    cursor:row-resize;
+    left:0; right:0;
+  }
+  .cell-resizer::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:var(--yellow);
+    opacity:0;
+    transition:opacity .1s;
+  }
+  .cell-resizer:hover::after, .cell-resizer.dragging::after{ opacity:0.7; }
+
+  .overlay-canvas{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    pointer-events:none;
+    z-index:10;
+  }
+  .side-overlay-canvas{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    pointer-events:none;
+    z-index:10;
+  }
+
+  .placeholder{
+    font-family:'Press Start 2P', monospace;
+    color:var(--screen-glow);
+    font-size:12px;
+    text-align:center;
+    text-shadow:0 0 6px var(--screen-glow);
+    opacity:0.8;
+    line-height:2;
+    padding:20px;
+    z-index:20;
+  }
+  .scanlines{
+    position:absolute; inset:0;
+    background:repeating-linear-gradient(
+      to bottom,
+      rgba(0,0,0,0) 0px,
+      rgba(0,0,0,0) 2px,
+      rgba(0,0,0,0.18) 3px
+    );
+    pointer-events:none;
+    mix-blend-mode:multiply;
+    z-index:30;
+  }
+  .crt-glow{
+    position:absolute; inset:0;
+    box-shadow: inset 0 0 60px 10px rgba(0,0,0,0.6);
+    pointer-events:none;
+    z-index:31;
+  }
+
+  .status-bar{
+    background:var(--yellow);
+    border:3px solid var(--ink);
+    border-radius:6px;
+    padding:8px 10px;
+    text-align:center;
+    margin-bottom:14px;
+    font-size:16px;
+    box-shadow:3px 3px 0 rgba(0,0,0,0.25);
+  }
+  .status-bar .en{
+    font-family:'Press Start 2P', monospace;
+    font-size:9px;
+    margin-top:4px;
+  }
+
+  .deck{
+    background:var(--panel);
+    border:4px solid var(--bezel);
+    border-radius:10px;
+    padding:12px;
+  }
+  .deck-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+  }
+  .deck-label{
+    font-family:'Press Start 2P', monospace;
+    font-size:10px;
+    letter-spacing:1px;
+    color:#333;
+    background:var(--key);
+    border:2px solid var(--ink);
+    border-radius:4px;
+    padding:4px 8px;
+    box-shadow:2px 2px 0 var(--key-shadow);
+  }
+  .step-num{
+    display:inline-block;
+    background:var(--ink);
+    color:var(--yellow);
+    border-radius:50%;
+    width:18px; height:18px;
+    line-height:18px;
+    text-align:center;
+    font-size:9px;
+    margin-right:6px;
+  }
+
+  .seg-group{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .seg-btn{
+    font-family:'Press Start 2P', monospace;
+    font-size:10px;
+    padding:8px 10px;
+    background:var(--key);
+    border:2px solid var(--ink);
+    border-radius:6px;
+    cursor:pointer;
+    box-shadow:2px 2px 0 var(--ink);
+    transition:transform 0.05s;
+    color:var(--ink);
+  }
+  .seg-btn:active{ transform:translate(2px,2px); box-shadow:0 0 0 var(--ink); }
+  .seg-btn.active{
+    background:var(--green);
+    box-shadow:2px 2px 0 var(--green-dark);
+  }
+
+  .dropzone{
+    border:3px dashed var(--ink);
+    border-radius:8px;
+    background:#fff;
+    padding:16px;
+    text-align:center;
+    cursor:pointer;
+    margin-bottom:12px;
+    font-size:16px;
+    position:relative;
+  }
+  .dropzone.dragover{ background:#fff8d6; }
+  .dropzone .slot-label{
+    font-family:'Press Start 2P', monospace;
+    font-size:9px;
+    color:#666;
+    margin-top:4px;
+  }
+  .dropzone input{ display:none; }
+
+  .slider-row{ margin-bottom:10px; }
+  .slider-row label{
+    display:flex;
+    justify-content:space-between;
+    font-size:16px;
+    margin-bottom:4px;
+  }
+  .slider-row .val{
+    font-family:'Press Start 2P', monospace;
+    font-size:10px;
+    background:var(--ink);
+    color:var(--yellow);
+    padding:2px 6px;
+    border-radius:4px;
+  }
+  input[type="range"]{
+    -webkit-appearance:none;
+    width:100%;
+    height:14px;
+    background:repeating-linear-gradient(
+      to right, var(--ink) 0 2px, transparent 2px 8px
+    ), var(--key);
+    border:2px solid var(--ink);
+    border-radius:8px;
+    box-shadow:inset 1px 1px 0 var(--key-shadow);
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:22px; height:22px;
+    background:var(--blue-btn);
+    border:2px solid var(--ink);
+    border-radius:50%;
+    box-shadow:2px 2px 0 var(--blue-btn-dark);
+    cursor:pointer;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:22px; height:22px;
+    background:var(--blue-btn);
+    border:2px solid var(--ink);
+    border-radius:50%;
+    box-shadow:2px 2px 0 var(--blue-btn-dark);
+    cursor:pointer;
+  }
+
+  .toggle-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:16px;
+    margin-bottom:10px;
+  }
+  .toggle-row input{
+    width:20px; height:20px;
+    accent-color: var(--green);
+  }
+
+  .palette-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:6px;
+    margin-bottom:10px;
+  }
+  .swatch{
+    border:2px solid var(--ink);
+    border-radius:6px;
+    height:34px;
+    cursor:pointer;
+    box-shadow:2px 2px 0 var(--ink);
+    position:relative;
+  }
+  .swatch.active::after{
+    content:"✓";
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Press Start 2P', monospace;
+    font-size:12px;
+    color:#fff;
+    text-shadow:1px 1px 2px #000;
+  }
+  .swatch:active{ transform:translate(2px,2px); box-shadow:0 0 0 var(--ink); }
+
+  .big-buttons{
+    display:flex;
+    gap:14px;
+    justify-content:center;
+    margin-top:14px;
+    flex-wrap:wrap;
+  }
+  .arcade-btn{
+    width:72px; height:72px;
+    border-radius:50%;
+    border:3px solid var(--ink);
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    font-family:'Press Start 2P', monospace;
+    font-size:8px;
+    text-align:center;
+    cursor:pointer;
+    color:var(--ink);
+    box-shadow: 0 6px 0 rgba(0,0,0,0.35), 0 6px 8px rgba(0,0,0,0.3);
+    transition:transform 0.05s, box-shadow 0.05s;
+    line-height:1.3;
+    flex-shrink:0;
+  }
+  .arcade-btn:active{
+    transform:translateY(4px);
+    box-shadow: 0 2px 0 rgba(0,0,0,0.35);
+  }
+  .arcade-btn.green{ background:radial-gradient(circle at 35% 30%, #9bf09b, var(--green)); }
+  .arcade-btn.red{ background:radial-gradient(circle at 35% 30%, #ff9b95, var(--red)); }
+  .arcade-btn.blue{ background:radial-gradient(circle at 35% 30%, #9bb4ff, var(--blue-btn)); color:#fff; }
+  .arcade-btn.yellow{ background:radial-gradient(circle at 35% 30%, #fff3a0, var(--yellow-btn)); }
+
+  .warning-note{
+    margin-top:14px;
+    background:#fff;
+    border:2px solid var(--ink);
+    border-radius:6px;
+    padding:8px 10px;
+    font-size:13px;
+    line-height:1.5;
+  }
+  .warning-note .title{
+    font-family:'Press Start 2P', monospace;
+    font-size:9px;
+    margin-bottom:4px;
+  }
+
+  .dots-row{
+    display:flex;
+    justify-content:center;
+    gap:6px;
+    margin:12px 0 4px;
+  }
+  .dots-row .d{
+    width:10px; height:10px;
+    border-radius:50%;
+    background:#fff;
+    border:2px solid var(--ink);
+  }
+  .dots-row .d.active{ background:var(--green); }
+
+  .section-divider{
+    height:2px;
+    background:repeating-linear-gradient(to right, var(--ink) 0 6px, transparent 6px 12px);
+    margin:14px 0;
+    opacity:0.4;
+  }
+
+  /* ============ MOBILE LAYOUT (default, vertical cabinet) ============ */
+  .cabinet{
+    width:100%;
+    max-width:520px;
+    margin:0 auto;
+    background:linear-gradient(180deg, var(--cab-blue-1) 0%, var(--cab-blue-2) 55%, var(--cab-blue-3) 100%);
+    border-radius:18px;
+    padding:14px;
+    box-shadow:
+      0 0 0 4px #0c1330,
+      0 20px 60px rgba(0,0,0,0.55);
+    position:relative;
+  }
+  .cabinet .screen-housing{ margin-bottom:14px; }
+  .cabinet .screen{ aspect-ratio: 4/3.4; }
+
+  .desktop-shell{ display:none; }
+
+  /* ============ DESKTOP LAYOUT (horizontal: left panel + right preview) ============ */
+  @media (min-width: 960px){
+    .cabinet{ display:none; }
+    .desktop-shell{
+      display:flex;
+      flex-direction:column;
+      max-width:1400px;
+      margin:0 auto;
+      padding:24px;
+      min-height:100vh;
+    }
+    .desktop-marquee{ margin-bottom:18px; }
+    .desktop-main{
+      display:flex;
+      gap:20px;
+      flex:1;
+      align-items:stretch;
+    }
+    .desktop-panel{
+      width:360px;
+      flex-shrink:0;
+      background:linear-gradient(180deg, var(--cab-blue-1) 0%, var(--cab-blue-2) 55%, var(--cab-blue-3) 100%);
+      border-radius:18px;
+      padding:14px;
+      box-shadow: 0 0 0 4px #0c1330, 0 20px 60px rgba(0,0,0,0.55);
+      overflow-y:auto;
+      max-height:calc(100vh - 200px);
+    }
+    .desktop-panel .deck{ background:var(--panel); }
+    .desktop-preview{
+      flex:1;
+      background:linear-gradient(180deg, var(--cab-blue-1) 0%, var(--cab-blue-2) 55%, var(--cab-blue-3) 100%);
+      border-radius:18px;
+      padding:18px;
+      box-shadow: 0 0 0 4px #0c1330, 0 20px 60px rgba(0,0,0,0.55);
+      display:flex;
+      flex-direction:column;
+    }
+    .desktop-preview .screen-housing{
+      flex:1;
+      display:flex;
+    }
+    .desktop-preview .screen{
+      flex:1;
+      min-height:500px;
+      aspect-ratio:auto;
+    }
+    .desktop-status{
+      margin-top:14px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========================= MOBILE / VERTICAL CABINET ========================= -->
+<div class="cabinet">
+
+  <div class="marquee">
+    <div class="corner-tl"></div><div class="corner-bl"></div>
+    <div class="marquee-title"><span class="punch">PUNCH</span></div>
+    <div class="marquee-sub">PHOTO COLLAGE × OVERLAY PATTERN</div>
+    <div class="marquee-sub2">DE STIJL EDITION・CARD ISSUING SERVICE</div>
+  </div>
+
+  <div class="screen-housing">
+    <div class="speaker left"></div>
+    <div class="speaker right"></div>
+    <div class="screen" id="screen-mobile">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+  <div class="status-bar">
+    請選擇模式並調整參數
+    <div class="en">PLEASE ADJUST THE SETTINGS BELOW</div>
+  </div>
+
+  <div class="deck" id="deck-mobile"></div>
+</div>
+
+<!-- ========================= DESKTOP / HORIZONTAL SHELL ========================= -->
+<div class="desktop-shell">
+
+  <div class="marquee desktop-marquee">
+    <div class="corner-tl"></div><div class="corner-bl"></div>
+    <div class="marquee-title"><span class="punch">PUNCH</span></div>
+    <div class="marquee-sub">PHOTO COLLAGE × OVERLAY PATTERN</div>
+    <div class="marquee-sub2">DE STIJL EDITION・CARD ISSUING SERVICE</div>
+  </div>
+
+  <div class="desktop-main">
+    <div class="desktop-panel">
+      <div class="deck" id="deck-desktop"></div>
+    </div>
+    <div class="desktop-preview">
+      <div class="screen-housing">
+        <div class="speaker left"></div>
+        <div class="speaker right"></div>
+        <div class="screen" id="screen-desktop">
+          <!-- populated by JS -->
+        </div>
+      </div>
+      <div class="status-bar desktop-status">
+        請選擇模式並調整參數
+        <div class="en">PLEASE ADJUST THE SETTINGS BELOW</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+
+  /* ============================================================
+     STATE
+     ============================================================ */
+  const state = {
+    img: null,                 // shared source image (HTMLImageElement)
+    overlayMode: 'snowflake',  // snowflake|circle|heart|bubble|star|rays|ascii|cross|diamond|triangle|none
+    dotSize: 100,
+    overlayOpacity: 50,        // %
+    scatterDensity: 40,
+    showSidePanel: false,
+    scatterSeed: 1,            // bumped by RANDOMIZE
+    baseColor: '#f4ecdf',      // cell 2 full-bleed background color
+    // collage cells: array of {x,y,w,h} in fractional units (0-1)
+    cells: [
+      {x:0, y:0, w:0.5, h:1},
+      {x:0.5, y:0, w:0.5, h:1}
+    ]
+  };
+
+  /* ============================================================
+     DECK (CONTROL PANEL) HTML — shared between mobile & desktop
+     ============================================================ */
+  const deckHTML = `
+    <div class="deck-row">
+      <span class="deck-label"><span class="step-num">1</span>SOURCE</span>
+    </div>
+    <div class="dropzone" data-dropzone>
+      📥 點擊或拖曳圖片至此<br>
+      <span class="slot-label">CARD SLOT — DROP JPG / PNG</span>
+      <input type="file" accept="image/*" data-fileinput>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div class="deck-row">
+      <span class="deck-label"><span class="step-num">2</span>COLLAGE LAYOUT</span>
+    </div>
+    <div class="seg-group" style="margin-bottom:10px;">
+      <button class="seg-btn" data-action="add-cell">+ 新增格子</button>
+      <button class="seg-btn" data-action="remove-cell">− 刪除格子</button>
+      <button class="seg-btn" data-action="layout-h">橫向排列</button>
+      <button class="seg-btn" data-action="layout-v">縱向排列</button>
+      <button class="seg-btn" data-action="layout-grid">2×2 網格</button>
+    </div>
+    <div style="font-size:13px; opacity:0.75; margin-bottom:12px;">提示：拖曳預覽區格子之間的黑色分隔線可調整比例</div>
+
+    <div class="section-divider"></div>
+
+    <div class="deck-row">
+      <span class="deck-label"><span class="step-num">3</span>PATTERN</span>
+    </div>
+    <div class="seg-group" data-overlay-group style="margin-bottom:10px;">
+      <button class="seg-btn active" data-overlay="snowflake">雪花</button>
+      <button class="seg-btn" data-overlay="circle">圓圈</button>
+      <button class="seg-btn" data-overlay="heart">愛心</button>
+      <button class="seg-btn" data-overlay="bubble">泡泡</button>
+      <button class="seg-btn" data-overlay="star">星星</button>
+      <button class="seg-btn" data-overlay="rays">光芒</button>
+      <button class="seg-btn" data-overlay="ascii">ASCII</button>
+      <button class="seg-btn" data-overlay="cross">十字</button>
+      <button class="seg-btn" data-overlay="diamond">菱形</button>
+      <button class="seg-btn" data-overlay="triangle">三角</button>
+      <button class="seg-btn" data-overlay="none">關閉</button>
+    </div>
+    <div style="font-size:13px; opacity:0.75; margin-bottom:10px;">提示：第一格顯示透明圖案疊加於照片上；第二格為滿版實色背景，圖案處挖空透出照片</div>
+    <div class="slider-row">
+      <label>OVERLAY OPACITY <span class="val" data-overlay-opacity-val>50%</span></label>
+      <input type="range" data-overlay-opacity min="0" max="100" value="50" step="5">
+    </div>
+    <div class="slider-row">
+      <label>SCATTER DENSITY <span class="val" data-density-val>40</span></label>
+      <input type="range" data-density min="5" max="300" value="40" step="5">
+    </div>
+    <div class="slider-row">
+      <label>PATTERN SIZE <span class="val" data-dot-val>1.0</span></label>
+      <input type="range" data-dot min="20" max="150" value="100" step="5">
+    </div>
+    <div class="slider-row">
+      <label>圖案顏色 PATTERN COLOR</label>
+      <input type="color" data-base-color value="#f4ecdf" style="width:100%; height:36px; border:2px solid var(--ink); border-radius:6px; cursor:pointer; padding:2px; background:var(--key);">
+    </div>
+    <div class="seg-group" style="margin-bottom:10px;">
+      <button class="seg-btn" data-action="randomize">🔀 RANDOMIZE 重新排列</button>
+    </div>
+    <div class="toggle-row">
+      <input type="checkbox" data-side-panel>
+      <label>顯示右側裝飾區 SIDE PANEL</label>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div class="big-buttons">
+      <div class="arcade-btn green" data-action="run">RUN<br>PUNCH</div>
+      <div class="arcade-btn yellow" data-action="save-png">SAVE<br>PNG</div>
+      <div class="arcade-btn red" data-action="reset">RESET</div>
+    </div>
+
+    <div class="dots-row">
+      <div class="d active"></div><div class="d"></div><div class="d"></div><div class="d"></div><div class="d"></div>
+    </div>
+
+    <div class="warning-note">
+      <div class="title">※ 注意事項 ※</div>
+      1. 上傳一張照片，會自動套用拼貼版面（同一張照片）。<br>
+      2. 拖曳格子間的黑線可調整比例，也可新增/刪除格子。<br>
+      3. 第一格會疊加透明圖案；第二格為滿版實色背景，圖案處挖空透出照片。<br>
+      4. RANDOMIZE 可重新打亂圖案的位置與大小分佈。
+    </div>
+  `;
+
+  // Inject deck into both mobile and desktop containers
+  document.getElementById('deck-mobile').innerHTML = deckHTML;
+  document.getElementById('deck-desktop').innerHTML = deckHTML;
+
+  /* ============================================================
+     SCREEN STAGE HTML (collage + overlay canvas)
+     ============================================================ */
+  const screenStageHTML = `
+    <div class="screen-stage">
+      <div class="collage-area">
+        <div class="placeholder" data-placeholder>請插入照片<br>INSERT PHOTO<br>TO BEGIN</div>
+        <div class="collage-wrap" data-collage-wrap style="display:none;"></div>
+        <canvas class="overlay-canvas" data-overlay-canvas style="display:none;"></canvas>
+      </div>
+      <div class="side-panel" data-side-panel-area>
+        <canvas class="side-overlay-canvas" data-side-overlay-canvas></canvas>
+      </div>
+      <div class="scanlines"></div>
+      <div class="crt-glow"></div>
+    </div>
+  `;
+  document.getElementById('screen-mobile').innerHTML = screenStageHTML;
+  document.getElementById('screen-desktop').innerHTML = screenStageHTML;
+
+  // All control elements exist twice (mobile + desktop). Keep them in sync.
+  const allDecks = [document.getElementById('deck-mobile'), document.getElementById('deck-desktop')];
+  const allScreens = [document.getElementById('screen-mobile'), document.getElementById('screen-desktop')];
+
+  function qAll(selector){
+    let out = [];
+    allDecks.forEach(d=> out.push(...d.querySelectorAll(selector)));
+    return out;
+  }
+
+  /* ============================================================
+     IMAGE LOADING
+     ============================================================ */
+  function handleFile(file){
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      const image = new Image();
+      image.onload = ()=>{
+        state.img = image;
+        allScreens.forEach(s=>{
+          s.querySelector('[data-placeholder]').style.display = 'none';
+          s.querySelector('[data-collage-wrap]').style.display = 'block';
+        });
+        buildCollage();
+        renderAll();
+      };
+      image.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  qAll('[data-dropzone]').forEach(dz=>{
+    dz.addEventListener('click', ()=> dz.querySelector('[data-fileinput]').click());
+    ['dragover','dragenter'].forEach(ev=> dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.add('dragover'); }));
+    ['dragleave','drop'].forEach(ev=> dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.remove('dragover'); }));
+    dz.addEventListener('drop', e=>{
+      if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+    });
+  });
+  qAll('[data-fileinput]').forEach(inp=>{
+    inp.addEventListener('change', e=>{
+      if(e.target.files[0]) handleFile(e.target.files[0]);
+    });
+  });
+
+  /* ============================================================
+     COLLAGE LAYOUT MANAGEMENT
+     ============================================================ */
+
+  // Rebuild DOM cells for each screen-stage based on state.cells
+  function buildCollage(){
+    allScreens.forEach(screen=>{
+      const wrap = screen.querySelector('[data-collage-wrap]');
+      wrap.innerHTML = '';
+
+      state.cells.forEach((cell, idx)=>{
+        const cellEl = document.createElement('div');
+        cellEl.className = 'collage-cell';
+        cellEl.dataset.idx = idx;
+        cellEl.style.left = (cell.x*100)+'%';
+        cellEl.style.top = (cell.y*100)+'%';
+        cellEl.style.width = (cell.w*100)+'%';
+        cellEl.style.height = (cell.h*100)+'%';
+
+        const canvas = document.createElement('canvas');
+        cellEl.appendChild(canvas);
+
+        const controls = document.createElement('div');
+        controls.className = 'cell-controls';
+        controls.innerHTML = `<button data-cell-remove title="刪除">×</button>`;
+        cellEl.appendChild(controls);
+
+        wrap.appendChild(cellEl);
+      });
+
+      // Add resizer handles between adjacent cells (simple approach: detect shared edges)
+      addResizers(screen, wrap);
+    });
+  }
+
+  // Add draggable resizer bars between cells that share a vertical or horizontal edge
+  function addResizers(screen, wrap){
+    const EPS = 0.001;
+    state.cells.forEach((cellA, idxA)=>{
+      state.cells.forEach((cellB, idxB)=>{
+        if(idxB <= idxA) return;
+        // shared vertical edge (A right == B left), overlapping y range
+        if(Math.abs((cellA.x+cellA.w) - cellB.x) < EPS){
+          const yTop = Math.max(cellA.y, cellB.y);
+          const yBot = Math.min(cellA.y+cellA.h, cellB.y+cellB.h);
+          if(yBot > yTop){
+            const r = document.createElement('div');
+            r.className = 'cell-resizer col';
+            r.style.left = (cellB.x*100)+'%';
+            r.style.top = (yTop*100)+'%';
+            r.style.height = ((yBot-yTop)*100)+'%';
+            r.style.transform = 'translateX(-50%)';
+            r.dataset.type = 'col';
+            r.dataset.a = idxA;
+            r.dataset.b = idxB;
+            wrap.appendChild(r);
+          }
+        }
+        // shared horizontal edge (A bottom == B top), overlapping x range
+        if(Math.abs((cellA.y+cellA.h) - cellB.y) < EPS){
+          const xLeft = Math.max(cellA.x, cellB.x);
+          const xRight = Math.min(cellA.x+cellA.w, cellB.x+cellB.w);
+          if(xRight > xLeft){
+            const r = document.createElement('div');
+            r.className = 'cell-resizer row';
+            r.style.top = (cellB.y*100)+'%';
+            r.style.left = (xLeft*100)+'%';
+            r.style.width = ((xRight-xLeft)*100)+'%';
+            r.style.transform = 'translateY(-50%)';
+            r.dataset.type = 'row';
+            r.dataset.a = idxA;
+            r.dataset.b = idxB;
+            wrap.appendChild(r);
+          }
+        }
+      });
+    });
+
+    // bind drag events
+    wrap.querySelectorAll('.cell-resizer').forEach(r=>{
+      r.addEventListener('pointerdown', e=>{
+        e.preventDefault();
+        r.classList.add('dragging');
+        r.setPointerCapture(e.pointerId);
+        const type = r.dataset.type;
+        const a = parseInt(r.dataset.a,10);
+        const b = parseInt(r.dataset.b,10);
+        const rect = wrap.getBoundingClientRect();
+
+        function onMove(ev){
+          const cellA = state.cells[a];
+          const cellB = state.cells[b];
+          if(type === 'col'){
+            let fx = (ev.clientX - rect.left) / rect.width;
+            const minW = 0.08;
+            const leftEdge = cellA.x;
+            const rightEdge = cellB.x + cellB.w;
+            fx = Math.max(leftEdge+minW, Math.min(rightEdge-minW, fx));
+            cellA.w = fx - cellA.x;
+            cellB.w = (cellB.x + cellB.w) - fx;
+            cellB.x = fx;
+          } else {
+            let fy = (ev.clientY - rect.top) / rect.height;
+            const minH = 0.08;
+            const topEdge = cellA.y;
+            const bottomEdge = cellB.y + cellB.h;
+            fy = Math.max(topEdge+minH, Math.min(bottomEdge-minH, fy));
+            cellA.h = fy - cellA.y;
+            cellB.h = (cellB.y + cellB.h) - fy;
+            cellB.y = fy;
+          }
+          // sync this same drag across BOTH screens by rebuilding layout positions only
+          syncCellPositions();
+          renderAll();
+        }
+        function onUp(ev){
+          r.classList.remove('dragging');
+          window.removeEventListener('pointermove', onMove);
+          window.removeEventListener('pointerup', onUp);
+          buildCollage();
+          renderAll();
+        }
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+      });
+    });
+  }
+
+  // During drag, just update positions/sizes of existing DOM cells (cheap), without full rebuild
+  function syncCellPositions(){
+    allScreens.forEach(screen=>{
+      const wrap = screen.querySelector('[data-collage-wrap]');
+      state.cells.forEach((cell, idx)=>{
+        const el = wrap.querySelector(`.collage-cell[data-idx="${idx}"]`);
+        if(el){
+          el.style.left = (cell.x*100)+'%';
+          el.style.top = (cell.y*100)+'%';
+          el.style.width = (cell.w*100)+'%';
+          el.style.height = (cell.h*100)+'%';
+        }
+      });
+      // reposition resizers
+      wrap.querySelectorAll('.cell-resizer').forEach(r=>{
+        const a = parseInt(r.dataset.a,10);
+        const b = parseInt(r.dataset.b,10);
+        const cellA = state.cells[a];
+        const cellB = state.cells[b];
+        if(r.dataset.type === 'col'){
+          const yTop = Math.max(cellA.y, cellB.y);
+          const yBot = Math.min(cellA.y+cellA.h, cellB.y+cellB.h);
+          r.style.left = (cellB.x*100)+'%';
+          r.style.top = (yTop*100)+'%';
+          r.style.height = ((yBot-yTop)*100)+'%';
+        } else {
+          const xLeft = Math.max(cellA.x, cellB.x);
+          const xRight = Math.min(cellA.x+cellA.w, cellB.x+cellB.w);
+          r.style.top = (cellB.y*100)+'%';
+          r.style.left = (xLeft*100)+'%';
+          r.style.width = ((xRight-xLeft)*100)+'%';
+        }
+      });
+    });
+  }
+
+  // Cell remove buttons (delegated)
+  allScreens.forEach(screen=>{
+    screen.addEventListener('click', e=>{
+      const btn = e.target.closest('[data-cell-remove]');
+      if(!btn) return;
+      if(state.cells.length <= 1) return;
+      const idx = parseInt(btn.closest('.collage-cell').dataset.idx, 10);
+      removeCell(idx);
+    });
+  });
+
+  function removeCell(idx){
+    const removed = state.cells[idx];
+    state.cells.splice(idx,1);
+    // give removed space to an adjacent cell (prefer left/top neighbor)
+    if(state.cells.length){
+      // find a cell sharing an edge to expand
+      let target = null;
+      for(let c of state.cells){
+        // shares right edge with removed's left edge
+        if(Math.abs((c.x+c.w)-removed.x) < 0.001 && rangesOverlap(c.y,c.y+c.h,removed.y,removed.y+removed.h)){
+          target = c; target.w += removed.w; break;
+        }
+        if(Math.abs(c.x-(removed.x+removed.w)) < 0.001 && rangesOverlap(c.y,c.y+c.h,removed.y,removed.y+removed.h)){
+          target = c; target.x = removed.x; target.w += removed.w; break;
+        }
+        if(Math.abs((c.y+c.h)-removed.y) < 0.001 && rangesOverlap(c.x,c.x+c.w,removed.x,removed.x+removed.w)){
+          target = c; target.h += removed.h; break;
+        }
+        if(Math.abs(c.y-(removed.y+removed.h)) < 0.001 && rangesOverlap(c.x,c.x+c.w,removed.x,removed.x+removed.w)){
+          target = c; target.y = removed.y; target.h += removed.h; break;
+        }
+      }
+      if(!target){
+        // fallback: just rescale everything to fill via simple normalization
+        normalizeLayout();
+      }
+    }
+    buildCollage();
+    renderAll();
+  }
+  function rangesOverlap(a1,a2,b1,b2){
+    return Math.max(a1,b1) < Math.min(a2,b2) - 0.001;
+  }
+
+  function normalizeLayout(){
+    // simple horizontal even split fallback
+    const n = state.cells.length;
+    state.cells = state.cells.map((c,i)=>({x:i/n, y:0, w:1/n, h:1}));
+  }
+
+  function addCell(){
+    if(state.cells.length >= 6) return;
+    // split the largest cell into two halves (vertical split if wider, horizontal if taller)
+    let largest = 0, largestArea = 0;
+    state.cells.forEach((c,i)=>{
+      const area = c.w*c.h;
+      if(area > largestArea){ largestArea = area; largest = i; }
+    });
+    const c = state.cells[largest];
+    if(c.w >= c.h){
+      const half = c.w/2;
+      const newCell = {x:c.x+half, y:c.y, w:half, h:c.h};
+      c.w = half;
+      state.cells.push(newCell);
+    } else {
+      const half = c.h/2;
+      const newCell = {x:c.x, y:c.y+half, w:c.w, h:half};
+      c.h = half;
+      state.cells.push(newCell);
+    }
+    buildCollage();
+    renderAll();
+  }
+
+  function setLayoutPreset(preset){
+    if(preset === 'h'){
+      const n = Math.max(2, state.cells.length);
+      state.cells = Array.from({length:n}, (_,i)=>({x:i/n, y:0, w:1/n, h:1}));
+    } else if(preset === 'v'){
+      const n = Math.max(2, state.cells.length);
+      state.cells = Array.from({length:n}, (_,i)=>({x:0, y:i/n, w:1, h:1/n}));
+    } else if(preset === 'grid'){
+      state.cells = [
+        {x:0,y:0,w:0.5,h:0.5},
+        {x:0.5,y:0,w:0.5,h:0.5},
+        {x:0,y:0.5,w:0.5,h:0.5},
+        {x:0.5,y:0.5,w:0.5,h:0.5}
+      ];
+    }
+    buildCollage();
+    renderAll();
+  }
+
+  /* ============================================================
+     CONTROL BINDINGS (shared across mobile + desktop instances)
+     ============================================================ */
+
+  // Action buttons
+  qAll('[data-action]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const action = btn.dataset.action;
+      if(action === 'add-cell') addCell();
+      else if(action === 'remove-cell') removeCell(state.cells.length-1);
+      else if(action === 'layout-h') setLayoutPreset('h');
+      else if(action === 'layout-v') setLayoutPreset('v');
+      else if(action === 'layout-grid') setLayoutPreset('grid');
+      else if(action === 'run') renderAll();
+      else if(action === 'save-png') savePNG();
+      else if(action === 'reset') resetAll();
+    });
+  });
+
+  // Overlay mode buttons (ON / OFF)
+  qAll('[data-overlay]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      state.overlayMode = btn.dataset.overlay;
+      qAll('[data-overlay]').forEach(b=> b.classList.toggle('active', b.dataset.overlay === state.overlayMode));
+      renderAll();
+    });
+  });
+
+  // Sliders
+  function bindSlider(selector, stateKey, labelSelector, formatFn){
+    qAll(selector).forEach(input=>{
+      input.addEventListener('input', ()=>{
+        state[stateKey] = parseFloat(input.value);
+        // sync all instances of this slider
+        qAll(selector).forEach(other=>{ if(other!==input) other.value = input.value; });
+        qAll(labelSelector).forEach(lbl=> lbl.textContent = formatFn(state[stateKey]));
+        renderAll();
+      });
+    });
+  }
+  bindSlider('[data-dot]', 'dotSize', '[data-dot-val]', v=>(v/100).toFixed(1));
+  bindSlider('[data-overlay-opacity]', 'overlayOpacity', '[data-overlay-opacity-val]', v=>String(v)+'%');
+  bindSlider('[data-density]', 'scatterDensity', '[data-density-val]', v=>String(v));
+
+  // Randomize button
+  qAll('[data-action="randomize"]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      state.scatterSeed = Math.floor(Math.random()*1000000);
+      renderAll();
+    });
+  });
+
+  // Base color picker
+  qAll('[data-base-color]').forEach(input=>{
+    input.addEventListener('input', ()=>{
+      state.baseColor = input.value;
+      qAll('[data-base-color]').forEach(other=>{ if(other!==input) other.value = input.value; });
+      renderAll();
+    });
+  });
+
+  // Side panel toggle
+  qAll('[data-side-panel]').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      state.showSidePanel = cb.checked;
+      qAll('[data-side-panel]').forEach(other=>{ other.checked = state.showSidePanel; });
+      allScreens.forEach(s=> s.querySelector('[data-side-panel-area]').classList.toggle('active', state.showSidePanel));
+      renderAll();
+    });
+  });
+
+  /* ============================================================
+     RENDERING
+     ============================================================ */
+
+  // Render the source image into each collage cell's canvas (simple cover-fit draw)
+  function renderCollageCells(){
+    if(!state.img) return;
+    allScreens.forEach(screen=>{
+      const wrap = screen.querySelector('[data-collage-wrap]');
+      const areaRect = screen.querySelector('.collage-area').getBoundingClientRect();
+
+      state.cells.forEach((cell, idx)=>{
+        const cellEl = wrap.querySelector(`.collage-cell[data-idx="${idx}"]`);
+        if(!cellEl) return;
+        const canvas = cellEl.querySelector('canvas');
+        const w = Math.max(1, Math.round(areaRect.width * cell.w));
+        const h = Math.max(1, Math.round(areaRect.height * cell.h));
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+
+        // cover-fit draw of state.img into w x h
+        const imgRatio = state.img.width/state.img.height;
+        const cellRatio = w/h;
+        let sx,sy,sw,sh;
+        if(imgRatio > cellRatio){
+          sh = state.img.height;
+          sw = sh*cellRatio;
+          sy = 0;
+          sx = (state.img.width - sw)/2;
+        } else {
+          sw = state.img.width;
+          sh = sw/cellRatio;
+          sx = 0;
+          sy = (state.img.height - sh)/2;
+        }
+        ctx.clearRect(0,0,w,h);
+        ctx.drawImage(state.img, sx, sy, sw, sh, 0, 0, w, h);
+
+        // Cell index 1 (second cell): full-bleed solid color with the
+        // pattern shapes punched out, revealing the photo underneath.
+        if(idx === 1 && state.overlayMode !== 'none'){
+          const colorLayer = document.createElement('canvas');
+          colorLayer.width = w; colorLayer.height = h;
+          const cctx = colorLayer.getContext('2d');
+          cctx.fillStyle = state.baseColor;
+          cctx.fillRect(0,0,w,h);
+          cctx.globalCompositeOperation = 'destination-out';
+          cctx.globalAlpha = 1;
+          drawScatterShapes(cctx, w, h, areaRect.width, areaRect.height, cell, true);
+          ctx.drawImage(colorLayer, 0, 0);
+        }
+      });
+    });
+  }
+
+  // Generate a deterministic-ish scatter layout of pattern marks
+  // using stage-level coordinates (so pattern is continuous across cells/side panel).
+  // Returns array of {x,y,size,rot,color,opacity}
+  function generateScatter(stageW, stageH, seedOffset){
+    const density = state.scatterDensity;
+    const area = stageW*stageH;
+    const count = Math.max(1, Math.round(area / (60000 / density)));
+    let seed = (Math.round(stageW) * 9301 + Math.round(stageH) * 49297 + seedOffset*233280 + state.scatterSeed*7919 + 12345) % 2147483647;
+    if(seed <= 0) seed += 2147483646;
+    function rnd(){
+      seed = (seed * 16807) % 2147483647;
+      return (seed-1)/2147483646;
+    }
+    const items = [];
+    const n = Math.min(800, Math.max(4, count));
+    for(let i=0;i<n;i++){
+      items.push({
+        x: rnd()*stageW,
+        y: rnd()*stageH,
+        size: 8 + rnd()*26,
+        rot: rnd()*Math.PI,
+        color: state.baseColor,
+        opacity: 0.35 + rnd()*0.65
+      });
+    }
+    return items;
+  }
+
+  // Generic shape drawer for all 10 pattern types.
+  // mode: 'overlay' (transparent line/fill on top of photo) | 'mask' (filled shape used for punch-out)
+  function drawShape(ctx, cx, cy, size, rot, color, opacity, mode, type){
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.rotate(rot);
+    const r = size/2;
+    const isMask = (mode === 'mask');
+
+    if(isMask){
+      ctx.fillStyle = `rgba(0,0,0,${opacity})`;
+      ctx.strokeStyle = `rgba(0,0,0,${opacity})`;
+    } else {
+      ctx.fillStyle = color;
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = opacity * (state.overlayOpacity/100) * 2;
+    }
+    ctx.lineWidth = Math.max(1, size * (isMask ? 0.16 : 0.07));
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    switch(type){
+      case 'snowflake': {
+        for(let i=0;i<4;i++){
+          const angle = (Math.PI/4)*i;
+          const dx = Math.cos(angle)*r;
+          const dy = Math.sin(angle)*r;
+          ctx.beginPath();
+          ctx.moveTo(-dx,-dy);
+          ctx.lineTo(dx,dy);
+          ctx.stroke();
+          const tickLen = r*0.28;
+          [0.62, 1].forEach(t=>{
+            const px = dx*t, py = dy*t;
+            const tx = Math.cos(angle+Math.PI/2)*tickLen;
+            const ty = Math.sin(angle+Math.PI/2)*tickLen;
+            if(t < 1){
+              ctx.beginPath();
+              ctx.moveTo(px-tx, py-ty);
+              ctx.lineTo(px+tx, py+ty);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(-px-tx, -py-ty);
+              ctx.lineTo(-px+tx, -py+ty);
+              ctx.stroke();
+            }
+          });
+        }
+        break;
+      }
+      case 'circle': {
+        ctx.beginPath();
+        ctx.arc(0,0,r,0,Math.PI*2);
+        if(isMask) ctx.fill(); else ctx.stroke();
+        break;
+      }
+      case 'heart': {
+        const s = size/16;
+        ctx.beginPath();
+        ctx.moveTo(0, 4*s);
+        ctx.bezierCurveTo(0, 2*s, -2*s, 0, -5*s, 0);
+        ctx.bezierCurveTo(-9*s, 0, -9*s, 5*s, -9*s, 5*s);
+        ctx.bezierCurveTo(-9*s, 9*s, -5*s, 12*s, 0, 16*s);
+        ctx.bezierCurveTo(5*s, 12*s, 9*s, 9*s, 9*s, 5*s);
+        ctx.bezierCurveTo(9*s, 5*s, 9*s, 0, 5*s, 0);
+        ctx.bezierCurveTo(2*s, 0, 0, 2*s, 0, 4*s);
+        ctx.closePath();
+        if(isMask) ctx.fill(); else (ctx.lineWidth*=0.6, ctx.stroke());
+        break;
+      }
+      case 'bubble': {
+        ctx.beginPath();
+        ctx.arc(0,0,r,0,Math.PI*2);
+        if(isMask){ ctx.fill(); }
+        else {
+          ctx.stroke();
+          // small highlight dot
+          ctx.beginPath();
+          ctx.arc(-r*0.35, -r*0.35, r*0.18, 0, Math.PI*2);
+          ctx.fill();
+        }
+        break;
+      }
+      case 'star': {
+        const spikes = 5;
+        const outerR = r;
+        const innerR = r*0.45;
+        ctx.beginPath();
+        for(let i=0;i<spikes*2;i++){
+          const rad = (i % 2 === 0) ? outerR : innerR;
+          const angle = (Math.PI/spikes)*i - Math.PI/2;
+          const px = Math.cos(angle)*rad;
+          const py = Math.sin(angle)*rad;
+          if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+        }
+        ctx.closePath();
+        if(isMask) ctx.fill(); else ctx.stroke();
+        break;
+      }
+      case 'rays': {
+        // light burst: many radiating lines from center
+        const count = 12;
+        for(let i=0;i<count;i++){
+          const angle = (Math.PI*2/count)*i;
+          ctx.beginPath();
+          ctx.moveTo(0,0);
+          ctx.lineTo(Math.cos(angle)*r, Math.sin(angle)*r);
+          ctx.stroke();
+        }
+        if(isMask){
+          ctx.beginPath();
+          ctx.arc(0,0,r,0,Math.PI*2);
+          ctx.fill();
+        }
+        break;
+      }
+      case 'cross': {
+        ctx.beginPath();
+        ctx.moveTo(-r,0); ctx.lineTo(r,0);
+        ctx.moveTo(0,-r); ctx.lineTo(0,r);
+        if(isMask){
+          // thicker plus shape as filled rects for solid mask
+          ctx.fillRect(-r, -r*0.18, r*2, r*0.36);
+          ctx.fillRect(-r*0.18, -r, r*0.36, r*2);
+        } else {
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'diamond': {
+        ctx.beginPath();
+        ctx.moveTo(0,-r);
+        ctx.lineTo(r,0);
+        ctx.lineTo(0,r);
+        ctx.lineTo(-r,0);
+        ctx.closePath();
+        if(isMask) ctx.fill(); else ctx.stroke();
+        break;
+      }
+      case 'triangle': {
+        ctx.beginPath();
+        ctx.moveTo(0,-r);
+        ctx.lineTo(r*0.87, r*0.5);
+        ctx.lineTo(-r*0.87, r*0.5);
+        ctx.closePath();
+        if(isMask) ctx.fill(); else ctx.stroke();
+        break;
+      }
+      case 'ascii': {
+        const chars = ['*','+','#','%','@','.',':','x'];
+        const ch = chars[Math.floor(Math.abs(Math.sin(cx*12.9898+cy*78.233))*chars.length) % chars.length];
+        ctx.font = `${Math.max(8,size)}px 'VT323', monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(ch, 0, 0);
+        break;
+      }
+      default: {
+        ctx.beginPath();
+        ctx.arc(0,0,r,0,Math.PI*2);
+        if(isMask) ctx.fill(); else ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  // Draw the scatter pattern for either the overlay (mode='overlay') or
+  // a punch-out mask (mode='mask'). The pattern is generated in stage-space
+  // and clipped/translated for the given cell (or side panel).
+  function drawScatterShapes(ctx, canvasW, canvasH, stageW, stageH, cell, isMask, seedOffset){
+    seedOffset = seedOffset || 1;
+    const items = generateScatter(stageW, stageH, seedOffset);
+    const offsetX = cell ? cell.x*stageW : 0;
+    const offsetY = cell ? cell.y*stageH : 0;
+    const type = state.overlayMode === 'none' ? 'snowflake' : state.overlayMode;
+    items.forEach(it=>{
+      const localX = it.x - offsetX;
+      const localY = it.y - offsetY;
+      if(localX < -it.size || localX > canvasW+it.size || localY < -it.size || localY > canvasH+it.size) return;
+      drawShape(ctx, localX, localY, it.size * (state.dotSize/100), it.rot, it.color, it.opacity, isMask ? 'mask' : 'overlay', type);
+    });
+  }
+
+  // Render the overlay pattern: cell 0 gets transparent pattern overlay,
+  // cell 1 gets the punch-out (handled in renderCollageCells)
+  function renderOverlay(){
+    allScreens.forEach(screen=>{
+      const area = screen.querySelector('.collage-area');
+      const overlayCanvas = screen.querySelector('[data-overlay-canvas]');
+      const rect = area.getBoundingClientRect();
+      const w = Math.max(1, Math.round(rect.width));
+      const h = Math.max(1, Math.round(rect.height));
+
+      if(state.overlayMode === 'none' || !state.img){
+        overlayCanvas.style.display = 'none';
+      } else {
+        overlayCanvas.style.display = 'block';
+        overlayCanvas.width = w;
+        overlayCanvas.height = h;
+        const ctx = overlayCanvas.getContext('2d');
+        ctx.clearRect(0,0,w,h);
+
+        // Draw scatter only over cell 0's region
+        const cell0 = state.cells[0];
+        if(cell0){
+          ctx.save();
+          // clip to cell 0's rect
+          ctx.beginPath();
+          ctx.rect(cell0.x*w, cell0.y*h, cell0.w*w, cell0.h*h);
+          ctx.clip();
+          drawScatterShapes(ctx, w, h, w, h, null, false, 1);
+          ctx.restore();
+        }
+      }
+
+      // ---- side panel ----
+      const sidePanel = screen.querySelector('[data-side-panel-area]');
+      sidePanel.classList.toggle('active', state.showSidePanel);
+      if(state.showSidePanel){
+        const sideCanvas = screen.querySelector('[data-side-overlay-canvas]');
+        const sRect = sidePanel.getBoundingClientRect();
+        const sw = Math.max(1, Math.round(sRect.width));
+        const sh = Math.max(1, Math.round(sRect.height));
+        sideCanvas.width = sw;
+        sideCanvas.height = sh;
+        const sctx = sideCanvas.getContext('2d');
+        sctx.clearRect(0,0,sw,sh);
+        if(state.overlayMode !== 'none'){
+          drawScatterShapes(sctx, sw, sh, sw, sh, null, false, 3);
+        }
+      }
+    });
+  }
+
+  function renderAll(){
+    if(!state.img) return;
+    requestAnimationFrame(()=>{
+      renderCollageCells();
+      renderOverlay();
+    });
+  }
+
+  // Re-render on resize (since canvases are sized in px)
+  let resizeTimer;
+  window.addEventListener('resize', ()=>{
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(renderAll, 150);
+  });
+
+  /* ============================================================
+     EXPORT
+     ============================================================ */
+
+  function getActiveScreen(){
+    // prefer whichever screen is visible
+    for(const s of allScreens){
+      if(s.offsetParent !== null) return s;
+    }
+    return allScreens[0];
+  }
+
+  function compositeFinalCanvas(){
+    const screen = getActiveScreen();
+    const stage = screen.querySelector('.screen-stage');
+    const area = screen.querySelector('.collage-area');
+    const stageRect = stage.getBoundingClientRect();
+    const areaRect = area.getBoundingClientRect();
+    const w = Math.round(stageRect.width);
+    const h = Math.round(stageRect.height);
+    const aw = Math.round(areaRect.width);
+
+    const out = document.createElement('canvas');
+    out.width = w; out.height = h;
+    const ctx = out.getContext('2d');
+    ctx.fillStyle = '#0a0c10';
+    ctx.fillRect(0,0,w,h);
+
+    const wrap = screen.querySelector('[data-collage-wrap]');
+    state.cells.forEach((cell, idx)=>{
+      const cellEl = wrap.querySelector(`.collage-cell[data-idx="${idx}"]`);
+      if(!cellEl) return;
+      const c = cellEl.querySelector('canvas');
+      ctx.drawImage(c, cell.x*aw, cell.y*h, cell.w*aw, cell.h*h);
+    });
+
+    if(state.overlayMode !== 'none'){
+      const overlay = screen.querySelector('[data-overlay-canvas]');
+      ctx.drawImage(overlay, 0, 0, aw, h);
+    }
+
+    if(state.showSidePanel){
+      ctx.fillStyle = '#f4ecdf';
+      ctx.fillRect(aw, 0, w-aw, h);
+      const sideCanvas = screen.querySelector('[data-side-overlay-canvas]');
+      ctx.drawImage(sideCanvas, aw, 0, w-aw, h);
+    }
+    return out;
+  }
+
+  function savePNG(){
+    if(!state.img){ alert('請先插入照片 / Please insert a photo first'); return; }
+    const out = compositeFinalCanvas();
+    const link = document.createElement('a');
+    link.download = 'punch-output.png';
+    link.href = out.toDataURL('image/png');
+    link.click();
+  }
+
+  function resetAll(){
+    state.img = null;
+    state.cells = [
+      {x:0, y:0, w:0.5, h:1},
+      {x:0.5, y:0, w:0.5, h:1}
+    ];
+    state.showSidePanel = false;
+    qAll('[data-side-panel]').forEach(cb=> cb.checked = false);
+    allScreens.forEach(s=>{
+      s.querySelector('[data-placeholder]').style.display = 'block';
+      s.querySelector('[data-collage-wrap]').style.display = 'none';
+      s.querySelector('[data-collage-wrap]').innerHTML = '';
+      const oc = s.querySelector('[data-overlay-canvas]');
+      oc.style.display = 'none';
+      s.querySelector('[data-side-panel-area]').classList.remove('active');
+    });
+    qAll('[data-fileinput]').forEach(inp=> inp.value = '');
+  }
+
+})();
+</script>
+
+</body>
+</html>
+
