@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pesu Collage Tool</title>
+<title>Lifestyle Collage Tool</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500;1,600&family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Archivo:wght@500;700;900&family=Space+Grotesk:wght@500;700&family=DM+Serif+Display:ital@0;1&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
@@ -2832,6 +2832,40 @@ function mapFontStyle(fontStyle){
 document.getElementById('titleInput').addEventListener('input', render);
 document.getElementById('fontSelect').addEventListener('change', render);
 
+// Export helper — on mobile, opens the native share sheet so the image can be
+// saved straight to Photos; falls back to a normal file download elsewhere.
+async function exportCanvasAsImage(canvasEl, filename){
+  const blob = await new Promise(resolve => canvasEl.toBlob(resolve, 'image/png'));
+  if(!blob){
+    // very old browsers without toBlob support
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvasEl.toDataURL('image/png');
+    link.click();
+    return;
+  }
+
+  if(navigator.canShare && navigator.share){
+    try{
+      const file = new File([blob], filename, {type:'image/png'});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file]});
+        return;
+      }
+    } catch(err){
+      if(err && err.name === 'AbortError') return; // user cancelled the share sheet
+      // otherwise fall through to the download fallback below
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = url;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 // Export
 document.getElementById('exportBtn').addEventListener('click', async () => {
   if(uploadedImages.length === 0){
@@ -2855,10 +2889,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
   // Dispatch to mode-specific export for new layouts
   if(layout.mode){
     await exportMode(ctx, layout, exportWidth, exportHeight);
-    const link = document.createElement('a');
-    link.download = 'collage.png';
-    link.href = canvasEl.toDataURL('image/png');
-    link.click();
+    await exportCanvasAsImage(canvasEl, 'collage.png');
     return;
   }
 
@@ -3041,11 +3072,8 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     if(ctx.letterSpacing !== undefined) ctx.letterSpacing = '0px';
   });
 
-  // download
-  const link = document.createElement('a');
-  link.download = 'collage.png';
-  link.href = canvasEl.toDataURL('image/png');
-  link.click();
+  // save / share
+  await exportCanvasAsImage(canvasEl, 'collage.png');
 });
 
 // ============= EXPORT CANVAS RENDERERS FOR NEW MODES =============
