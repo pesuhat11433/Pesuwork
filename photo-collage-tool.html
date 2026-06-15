@@ -35,23 +35,6 @@
     border-bottom:1px solid var(--line);
     margin-bottom:48px;
   }
-  .header-top{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    font-size:11px;
-    letter-spacing:1.5px;
-    text-transform:uppercase;
-    color:var(--muted);
-    margin-bottom:28px;
-  }
-  .header-top span:last-child{
-    font-style:italic;
-    font-family:"Playfair Display", serif;
-    text-transform:none;
-    letter-spacing:0;
-    font-size:13px;
-  }
   header h1{
     font-family:"Playfair Display", serif;
     font-size:clamp(40px, 8vw, 72px);
@@ -663,6 +646,169 @@
     box-sizing:border-box;
   }
 
+  /* mobile tab bar — hidden on desktop by default */
+  .mobile-tabbar{
+    display:none;
+  }
+  .font-options{
+    display:none;
+  }
+
+  /* ===== Mobile: shrunk title, menu collapsed into a pinned horizontal tab strip ===== */
+  @media (max-width:899px){
+    header{
+      padding:24px 24px 28px;
+      margin-bottom:24px;
+    }
+    header h1{
+      font-size:clamp(26px, 9vw, 38px);
+    }
+    header p{
+      margin-top:8px;
+      font-size:12px;
+      max-width:100%;
+    }
+
+    .controls{
+      order:1;
+      position:sticky;
+      top:0;
+      z-index:30;
+      background:var(--bg);
+      margin-left:-24px;
+      margin-right:-24px;
+      width:calc(100% + 48px);
+      padding:0 0 4px;
+      max-height:500px;
+      overflow-y:auto;
+      display:flex;
+      flex-direction:column;
+      border-bottom:1px solid var(--line);
+      box-shadow:0 8px 16px -12px rgba(0,0,0,.25);
+    }
+    .canvas-wrap{
+      order:2;
+    }
+
+    /* original accordion headers are replaced by the tab strip */
+    .controls > .panel > h2{
+      display:none;
+    }
+    .controls > .panel{
+      border-bottom:none;
+      padding:0;
+    }
+    .controls > .panel > .panel-body{
+      margin-top:0;
+      padding:14px 24px 6px;
+    }
+
+    /* horizontal scrolling tab strip */
+    .mobile-tabbar{
+      display:flex;
+      flex-direction:row;
+      flex-shrink:0;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      padding:0 24px;
+      background:var(--bg);
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+    .mobile-tabbar::-webkit-scrollbar{ display:none; }
+    .mobile-tab{
+      flex:0 0 auto;
+      display:flex;
+      align-items:baseline;
+      gap:6px;
+      white-space:nowrap;
+      padding:14px 14px;
+      font-family:inherit;
+      font-size:11px;
+      font-weight:600;
+      letter-spacing:1.5px;
+      text-transform:uppercase;
+      color:var(--muted);
+      background:none;
+      border:none;
+      border-bottom:2px solid transparent;
+      cursor:pointer;
+    }
+    .mobile-tab .num{
+      font-family:"Playfair Display", serif;
+      font-style:italic;
+      font-size:14px;
+      color:var(--ink);
+      text-transform:none;
+      letter-spacing:0;
+    }
+    .mobile-tab.active{
+      color:var(--ink);
+      border-bottom-color:var(--ink);
+    }
+
+    /* 02 Layout Style — horizontal scroll instead of grid */
+    .layout-options{
+      display:flex;
+      flex-direction:row;
+      flex-wrap:nowrap;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      gap:8px;
+      padding-bottom:2px;
+    }
+    .layout-options::-webkit-scrollbar{ display:none; }
+    .layout-btn{
+      flex:0 0 64px;
+    }
+
+    /* 04 Title Text — font style as horizontal scroll pills instead of <select> */
+    #fontSelect{
+      display:none;
+    }
+    .font-options{
+      display:flex;
+      flex-direction:row;
+      flex-wrap:nowrap;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      gap:8px;
+      padding-bottom:2px;
+    }
+    .font-options::-webkit-scrollbar{ display:none; }
+    .font-option{
+      flex:0 0 auto;
+      white-space:nowrap;
+      padding:10px 14px;
+      border:1px solid var(--line);
+      background:var(--panel);
+      color:var(--ink);
+      font-size:12px;
+      cursor:pointer;
+    }
+    .font-option.active{
+      border-color:var(--ink);
+      border-width:2px;
+    }
+
+    /* 04 Title Text — colour swatches as horizontal scroll */
+    .color-options{
+      flex-wrap:nowrap;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      padding-bottom:2px;
+    }
+    .color-options::-webkit-scrollbar{ display:none; }
+    .color-options .color-swatch{
+      flex-shrink:0;
+    }
+  }
+
   /* ===== Desktop: horizontal split, controls left / preview right ===== */
   @media (min-width:900px){
     .layout{
@@ -741,8 +887,6 @@
 <body>
 
 <header>
-  <div class="header-top">
-  </div>
   <h1>lifestyle <em>collage</em></h1>
   <p>upload your photos, let <em>composition</em> meet a little randomness — generate quiet, editorial layouts for your feed.</p>
 </header>
@@ -1524,11 +1668,61 @@ allPanels.forEach((panel, idx) => {
       panel.classList.remove('collapsed');
     }
   });
-  // Default state: only panel 1 (Upload Photos) open, rest collapsed
-  if(idx !== 0){
+  // Default state: on mobile, all panels start collapsed (compact pinned menu).
+  // On desktop, only panel 1 (Upload Photos) is open by default.
+  const startCollapsed = window.matchMedia('(max-width:899px)').matches ? true : (idx !== 0);
+  if(startCollapsed){
     panel.classList.add('collapsed');
   }
 });
+
+// Mobile: consolidate the accordion headers into a pinned horizontal tab strip
+const mobileTabbar = document.createElement('div');
+mobileTabbar.className = 'mobile-tabbar';
+allPanels.forEach((panel, idx) => {
+  const h2 = panel.querySelector('h2');
+  if(!h2) return;
+  const numEl = h2.querySelector('.num');
+  const numText = numEl ? numEl.textContent : '';
+  const labelText = h2.textContent.replace(numText, '').replace('⌄','').trim();
+  const tab = document.createElement('button');
+  tab.type = 'button';
+  tab.className = 'mobile-tab';
+  tab.innerHTML = `<span class="num">${numText}</span><span>${labelText}</span>`;
+  tab.addEventListener('click', () => {
+    h2.click();
+    refreshMobileTabs();
+  });
+  mobileTabbar.appendChild(tab);
+});
+document.querySelector('.controls').prepend(mobileTabbar);
+
+function refreshMobileTabs(){
+  const tabs = mobileTabbar.querySelectorAll('.mobile-tab');
+  allPanels.forEach((panel, idx) => {
+    tabs[idx].classList.toggle('active', !panel.classList.contains('collapsed'));
+  });
+}
+refreshMobileTabs();
+
+// Mobile: swiping up (page scrolls down) collapses the open menu panel
+let lastScrollY = window.scrollY;
+window.addEventListener('scroll', () => {
+  if(!window.matchMedia('(max-width:899px)').matches){
+    lastScrollY = window.scrollY;
+    return;
+  }
+  const currentY = window.scrollY;
+  if(currentY > lastScrollY + 4){
+    const hasOpenPanel = allPanels.some(p => !p.classList.contains('collapsed'));
+    if(hasOpenPanel){
+      allPanels.forEach(p => p.classList.add('collapsed'));
+      refreshMobileTabs();
+    }
+  }
+  lastScrollY = currentY;
+}, {passive:true});
+
 
 const layoutOptionsEl = document.getElementById('layoutOptions');
 layouts.forEach((layout, idx) => {
@@ -1749,6 +1943,36 @@ colorPalette.forEach((c) => {
   });
   colorOptionsEl.appendChild(sw);
 });
+
+// Mobile: font style as horizontal scroll pills (mirrors #fontSelect)
+const fontPreviewStyles = {
+  'playfair-bold': {fontFamily:'"Playfair Display", serif', fontWeight:'700'},
+  'playfair-italic': {fontFamily:'"Playfair Display", serif', fontStyle:'italic', fontWeight:'500'},
+  'cormorant': {fontFamily:'"Cormorant Garamond", serif'},
+  'dm-serif-italic': {fontFamily:'"DM Serif Display", serif', fontStyle:'italic'},
+  'archivo': {fontFamily:'"Archivo", sans-serif', fontWeight:'900'},
+  'space-grotesk': {fontFamily:'"Space Grotesk", sans-serif', fontWeight:'700'},
+  'caveat': {fontFamily:'"Caveat", cursive', fontWeight:'600'}
+};
+const fontSelectEl = document.getElementById('fontSelect');
+const fontOptionsEl = document.createElement('div');
+fontOptionsEl.className = 'font-options';
+Array.from(fontSelectEl.options).forEach(opt => {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'font-option' + (opt.selected ? ' active' : '');
+  btn.textContent = opt.textContent;
+  const style = fontPreviewStyles[opt.value];
+  if(style) Object.assign(btn.style, style);
+  btn.addEventListener('click', () => {
+    fontSelectEl.value = opt.value;
+    fontOptionsEl.querySelectorAll('.font-option').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    fontSelectEl.dispatchEvent(new Event('change'));
+  });
+  fontOptionsEl.appendChild(btn);
+});
+fontSelectEl.insertAdjacentElement('afterend', fontOptionsEl);
 
 // File upload
 document.getElementById('fileInput').addEventListener('change', (e) => {
