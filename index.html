@@ -31,7 +31,7 @@
     scroll-behavior: smooth;
   }
 
-  /* ─── NAV ─── */
+  /* NAV */
   nav {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     display: flex; align-items: center; justify-content: space-between;
@@ -67,12 +67,10 @@
     transition: all 0.25s;
   }
 
-  /* ─── MAIN CONTENT ─── */
   .page-wrap { max-width: 960px; margin: 0 auto; padding: 0 3rem; }
-
   section { padding: 7rem 0; }
 
-  /* ─── HERO ─── */
+  /* HERO */
   #hero {
     padding-top: 11rem;
     padding-bottom: 6rem;
@@ -148,7 +146,6 @@
     transition: color 0.2s;
   }
   .btn-ghost:hover { color: var(--ink); }
-
   .hero-right {
     display: flex;
     flex-direction: column;
@@ -191,14 +188,11 @@
     margin-top: 0.3rem;
   }
 
-  /* ─── DIVIDER ─── */
   .section-divider {
     border: none;
     border-top: 0.5px solid var(--line);
     margin: 0;
   }
-
-  /* ─── SECTION HEADER ─── */
   .section-header {
     display: flex;
     align-items: baseline;
@@ -221,7 +215,7 @@
     color: var(--ink2);
   }
 
-  /* ─── ABOUT ─── */
+  /* ABOUT */
   .about-grid {
     display: grid;
     grid-template-columns: 1fr 1.6fr;
@@ -274,7 +268,7 @@
     font-weight: 400;
   }
 
-  /* ─── EXPERIENCE ─── */
+  /* EXPERIENCE */
   .exp-item {
     display: grid;
     grid-template-columns: 1.2fr 2.4fr 0.8fr;
@@ -313,79 +307,201 @@
     line-height: 1.8;
   }
 
-  /* ─── WORKS ─── */
-  .works-filter {
-    display: flex;
-    gap: 1.5rem;
-    margin-bottom: 3rem;
-    flex-wrap: wrap;
+  /* =====================
+     WORKS — DESKTOP SCENE
+     ===================== */
+  #works { padding-bottom: 5rem; }
+
+  .works-scene {
+    position: relative;
+    width: 100%;
+    height: 680px;
+    background: var(--bg);
+    border-radius: 0;
+    overflow: hidden;
+    cursor: default;
+    margin-top: 0;
   }
-  .filter-btn {
-    font-size: 0.68rem;
-    letter-spacing: 0.12em;
+
+  /* big center title */
+  .scene-title {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+    z-index: 1;
+    white-space: nowrap;
+  }
+  .scene-title h2 {
+    font-family: var(--serif);
+    font-size: clamp(44px, 6.5vw, 76px);
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1.0;
+    letter-spacing: -0.02em;
+  }
+  .scene-title h2 em {
+    font-style: italic;
+    background: #4F7CF0;
+    color: #fff;
+    padding: 0 8px 3px;
+    border-radius: 2px;
+  }
+  .scene-title p {
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--ink3);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0 0 2px 0;
-    font-family: var(--sans);
-    font-weight: 400;
-    transition: color 0.2s;
-    border-bottom: 0.5px solid transparent;
+    margin-top: 10px;
   }
-  .filter-btn:hover,
-  .filter-btn.active { color: var(--ink); border-bottom-color: var(--ink); }
 
-  .works-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0;
-  }
-  .work-item {
-    position: relative;
-    overflow: hidden;
-    cursor: pointer;
-    border: 0.5px solid var(--line);
-    margin: -0.25px;
-  }
-  .work-item.hidden { display: none; }
-  .work-img {
-    width: 100%;
-    aspect-ratio: 1;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.5s ease, filter 0.3s ease;
-    filter: grayscale(15%);
-  }
-  .work-item:hover .work-img {
-    transform: scale(1.04);
-    filter: grayscale(0%);
-  }
-  .work-overlay {
+  /* scattered file items */
+  .sfile {
     position: absolute;
-    bottom: 0; left: 0; right: 0;
-    padding: 1.2rem;
-    background: linear-gradient(transparent, rgba(28,27,24,0.68));
-    opacity: 0;
-    transition: opacity 0.3s;
+    cursor: pointer;
+    user-select: none;
+    z-index: 2;
+    transition: transform 0.18s ease, z-index 0s;
   }
-  .work-item:hover .work-overlay { opacity: 1; }
-  .work-label {
+  .sfile:hover { transform: var(--base-rotate, rotate(0deg)) scale(1.05) !important; z-index: 20; }
+  .sfile img {
+    display: block;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.16);
+    border-radius: 3px;
+    object-fit: cover;
+  }
+  .sfile .fname {
+    font-size: 10px;
+    color: #444;
+    margin-top: 5px;
+    text-align: center;
+    font-family: var(--sans);
+    max-width: 130px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* folder items */
+  .sfolder {
+    position: absolute;
+    cursor: pointer;
+    user-select: none;
+    z-index: 2;
+    text-align: center;
+    transition: transform 0.18s ease;
+  }
+  .sfolder:hover { transform: scale(1.07); z-index: 20; }
+  .sfolder svg { display: block; margin: 0 auto; }
+  .sfolder .fname {
+    font-size: 10px;
+    color: #333;
+    font-weight: 600;
+    margin-top: 5px;
+    font-family: var(--sans);
+  }
+
+
+
+  /* LIGHTBOX MODAL */
+  .lb-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(28,27,24,0.82);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .lb-overlay.open { display: flex; }
+  .lb-box {
+    background: var(--bg);
+    border-radius: 8px;
+    width: min(720px, 100%);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .lb-head {
+    padding: 18px 22px 14px;
+    border-bottom: 0.5px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-shrink: 0;
+  }
+  .lb-cat {
     font-size: 0.62rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: rgba(247,246,242,0.6);
+    color: var(--ink3);
+    margin-bottom: 4px;
+    font-family: var(--sans);
   }
-  .work-title {
+  .lb-title {
     font-family: var(--serif);
-    font-size: 0.95rem;
-    font-weight: 300;
-    color: #F7F6F2;
-    margin-top: 0.2rem;
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--ink);
+  }
+  .lb-close {
+    background: none;
+    border: 0.5px solid var(--line);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--ink2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: background 0.18s;
+  }
+  .lb-close:hover { background: var(--bg2); }
+  .lb-body {
+    overflow-y: auto;
+    padding: 22px;
+  }
+  .lb-body::-webkit-scrollbar { width: 3px; }
+  .lb-body::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+  .lb-desc {
+    font-size: 0.84rem;
+    line-height: 1.8;
+    color: var(--ink2);
+    margin-bottom: 18px;
+  }
+  .lb-imgs { display: flex; flex-direction: column; gap: 10px; }
+  .lb-imgs img {
+    width: 100%;
+    border-radius: 4px;
+    display: block;
+    border: 0.5px solid var(--line);
+  }
+  .lb-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .lb-tag {
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border: 0.5px solid var(--line);
+    color: var(--ink3);
+    font-family: var(--sans);
   }
 
-  /* ─── CONTACT ─── */
+  /* CONTACT */
   #contact { text-align: center; padding-bottom: 8rem; }
   .contact-eyebrow {
     font-size: 0.68rem;
@@ -436,7 +552,6 @@
   }
   .social-links a:hover { color: var(--ink); }
 
-  /* ─── FOOTER ─── */
   footer {
     border-top: 0.5px solid var(--line);
     padding: 2rem 0;
@@ -451,7 +566,6 @@
     text-transform: uppercase;
   }
 
-  /* ─── FADE IN ─── */
   .fade-in {
     opacity: 0;
     transform: translateY(18px);
@@ -459,7 +573,7 @@
   }
   .fade-in.visible { opacity: 1; transform: translateY(0); }
 
-  /* ─── MOBILE ─── */
+  /* MOBILE */
   @media (max-width: 768px) {
     nav { padding: 1.2rem 1.5rem; }
     .nav-links { display: none; }
@@ -476,14 +590,8 @@
     }
     .nav-links.open a { font-size: 1rem; }
     .nav-hamburger { display: block; z-index: 101; }
-
     .page-wrap { padding: 0 1.5rem; }
-
-    #hero {
-      grid-template-columns: 1fr;
-      padding-top: 8rem;
-      gap: 3rem;
-    }
+    #hero { grid-template-columns: 1fr; padding-top: 8rem; gap: 3rem; }
     .hero-right { align-items: flex-start; }
     .hero-archive-tag { text-align: left; }
     .hero-stats { flex-direction: row; gap: 1rem; }
@@ -495,20 +603,18 @@
     }
     .stat-item:last-child { border-right: none; }
     .stat-num { font-size: 2rem; }
-
     .about-grid { grid-template-columns: 1fr; gap: 2.5rem; }
     .about-photo { aspect-ratio: 3/2; }
-
     .exp-item { grid-template-columns: 1fr; gap: 0.75rem; }
     .exp-period { text-align: left; }
-
-    .works-grid { grid-template-columns: repeat(2, 1fr); }
-
+    .works-scene { height: 520px; }
+    .scene-title h2 { font-size: 36px; }
     footer { flex-direction: column; gap: 0.5rem; text-align: center; }
   }
 
   @media (max-width: 480px) {
-    .works-grid { grid-template-columns: 1fr; }
+    .works-scene { height: 420px; }
+    .scene-title h2 { font-size: 28px; }
     .hero-stats { flex-direction: column; gap: 0; }
     .stat-item {
       border-right: none;
@@ -520,8 +626,6 @@
 
   @media (prefers-reduced-motion: reduce) {
     .fade-in { opacity: 1; transform: none; transition: none; }
-    .work-img { transition: none; }
-    .work-overlay { opacity: 1; }
   }
 </style>
 </head>
@@ -536,9 +640,7 @@
     <li><a href="#contact" onclick="closeMenu()">Contact</a></li>
   </ul>
   <button class="nav-hamburger" id="hamburger" aria-label="Toggle menu">
-    <span></span>
-    <span></span>
-    <span></span>
+    <span></span><span></span><span></span>
   </button>
 </nav>
 
@@ -611,7 +713,6 @@
       <span class="section-num">02</span>
       <span class="section-title">Work Experience</span>
     </div>
-
     <div class="exp-item fade-in">
       <div>
         <p class="exp-company">Meitu Corp.</p>
@@ -620,7 +721,6 @@
       <p class="exp-desc">Led brand and marketing visual design across multiple digital channels. Defined creative strategies balancing global brand direction with local-market execution for Japan and Korea. Data-driven iteration resulted in <strong>+30% user engagement</strong> and <strong>+25% app downloads</strong> in key markets.</p>
       <p class="exp-period">Oct 2022<br>Present</p>
     </div>
-
     <div class="exp-item fade-in">
       <div>
         <p class="exp-company">Jomo Corp.</p>
@@ -629,7 +729,6 @@
       <p class="exp-desc">Directed brand visual identity for fashion product lines. Redesigned product pages and visual hierarchy contributing to a <strong>25% reduction in bounce rate</strong>. Trend-driven campaign visuals drove a <strong>40% increase in sales</strong> within six months.</p>
       <p class="exp-period">May 2019<br>Sep 2021</p>
     </div>
-
     <div class="exp-item fade-in">
       <div>
         <p class="exp-company">Perfect Corp.</p>
@@ -638,7 +737,6 @@
       <p class="exp-desc">Designed marketing and in-app visual content for global campaigns. Created AR-based virtual try-on experiences contributing to <strong>+40% app downloads</strong>. Produced localized assets across international markets with consistent brand presence.</p>
       <p class="exp-period">May 2015<br>May 2018</p>
     </div>
-
     <div class="exp-item fade-in">
       <div>
         <p class="exp-company">Rakuten Taiwan</p>
@@ -647,7 +745,6 @@
       <p class="exp-desc">Designed marketing visuals and digital assets for a fashion-focused social commerce platform, supporting brand campaigns across app, web, and social channels.</p>
       <p class="exp-period">Oct 2014<br>May 2015</p>
     </div>
-
     <div class="exp-item fade-in">
       <div>
         <p class="exp-company">Niusnews</p>
@@ -666,112 +763,119 @@
       <span class="section-num">03</span>
       <span class="section-title">Portfolio</span>
     </div>
-    <div class="works-filter fade-in">
-      <button class="filter-btn active" data-filter="all">All</button>
-      <button class="filter-btn" data-filter="branding">Branding</button>
-      <button class="filter-btn" data-filter="illustration">Illustration</button>
-      <button class="filter-btn" data-filter="social">Social Post</button>
-    </div>
-    <div class="works-grid fade-in">
-      <div class="work-item" data-cat="branding">
-        <img class="work-img" src="https://peggy-su-portfolio.netlify.app/branding/200B7094-985C-4BAE-A260-8FDD49A127E8.PNG" alt="Meitu MZ Campaign" loading="lazy" />
-        <div class="work-overlay">
-          <p class="work-label">Branding</p>
-          <p class="work-title">Meitu MZ Campaign</p>
-        </div>
+
+
+    <!-- desktop scatter scene -->
+    <div class="works-scene fade-in" id="works-scene">
+
+      <div class="scene-title">
+        <h2>PE <em>SU</em>'s<br>Work</h2>
+        <p>Selected Works · 2013 – 2026</p>
       </div>
-      <div class="work-item" data-cat="illustration">
-        <img class="work-img" src="https://peggy-su-portfolio.netlify.app/illustration/dancemimi.jpg" alt="Mimiko Queen of Dance" loading="lazy" />
-        <div class="work-overlay">
-          <p class="work-label">Illustration</p>
-          <p class="work-title">Mimiko — Queen of Dance</p>
-        </div>
+
+      <!-- FILE: Mimiko illustration — top left -->
+      <div class="sfile" style="left:3%;top:7%;--base-rotate:rotate(-3deg);transform:rotate(-3deg)"
+           data-cat="illustration" data-id="0">
+        <img src="https://peggy-su-portfolio.netlify.app/illustration/dancemimi.jpg"
+             width="108" height="108" alt="Mimiko">
+        <div class="fname">dancemimi.jpg</div>
       </div>
-      <div class="work-item" data-cat="illustration">
-        <img class="work-img" src="https://peggy-su-portfolio.netlify.app/illustration/cp_iphone%206plus_1169x2102_pe2.jpg" alt="Starry Night Girl" loading="lazy" />
-        <div class="work-overlay">
-          <p class="work-label">Illustration</p>
-          <p class="work-title">Starry Night Girl</p>
-        </div>
+
+      <!-- FILE: Starry Night — top center-left -->
+      <div class="sfile" style="left:24%;top:3%;--base-rotate:rotate(2deg);transform:rotate(2deg)"
+           data-cat="illustration" data-id="1">
+        <img src="https://peggy-su-portfolio.netlify.app/illustration/cp_iphone%206plus_1169x2102_pe2.jpg"
+             width="100" height="130" alt="Starry Night">
+        <div class="fname">starry-night.jpg</div>
       </div>
-      <div class="work-item" data-cat="social">
-        <img class="work-img" src="https://peggy-su-portfolio.netlify.app/social%20post/cover.jpg" alt="Creator Spotlight Cover" loading="lazy" />
-        <div class="work-overlay">
-          <p class="work-label">Social Post</p>
-          <p class="work-title">Creator Spotlight — Cover</p>
-        </div>
+
+      <!-- FILE: Meitu MZ Campaign — top right -->
+      <div class="sfile" style="right:4%;top:5%;--base-rotate:rotate(1deg);transform:rotate(1deg)"
+           data-cat="branding" data-id="2">
+        <img src="https://peggy-su-portfolio.netlify.app/branding/200B7094-985C-4BAE-A260-8FDD49A127E8.PNG"
+             width="130" height="98" alt="Meitu MZ Campaign">
+        <div class="fname">meitu-mz-campaign.png</div>
       </div>
-      <div class="work-item" data-cat="social">
-        <img class="work-img" src="https://peggy-su-portfolio.netlify.app/social%20post/l.jpg" alt="Creator Spotlight Banner" loading="lazy" />
-        <div class="work-overlay">
-          <p class="work-label">Social Post</p>
-          <p class="work-title">Creator Spotlight — Banner</p>
-        </div>
+
+      <!-- FOLDER: social&posts — mid left -->
+      <div class="sfolder" style="left:2%;top:40%"
+           data-cat="social" data-id="folder-social">
+        <svg width="62" height="50" viewBox="0 0 62 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1 9C1 6.8 2.8 5 5 5H20L26 11H57C59.2 11 61 12.8 61 15V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V9Z" fill="#F4A9C0"/>
+          <path d="M1 17H61V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V17Z" fill="#F7C4D4"/>
+        </svg>
+        <div class="fname">social&amp;posts</div>
       </div>
-      <div class="work-item" data-cat="social">
-        <img class="work-img" src="https://peggy-su-portfolio.netlify.app/social%20post/p1.jpg" alt="Q&A Inspiration" loading="lazy" />
-        <div class="work-overlay">
-          <p class="work-label">Social Post</p>
-          <p class="work-title">Q&A — Inspiration</p>
-        </div>
+
+      <!-- FILE: Creator cover — mid center left -->
+      <div class="sfile" style="left:17%;top:52%;--base-rotate:rotate(-2deg);transform:rotate(-2deg)"
+           data-cat="social" data-id="3">
+        <img src="https://peggy-su-portfolio.netlify.app/social%20post/cover.jpg"
+             width="110" height="110" alt="Creator Cover">
+        <div class="fname">creator-cover.jpg</div>
       </div>
-      <div class="work-item" data-cat="social">
-        <img class="work-img" src="https://peggy-su-portfolio.netlify.app/social%20post/p2.jpg" alt="Q&A Creative Habits" loading="lazy" />
-        <div class="work-overlay">
-          <p class="work-label">Social Post</p>
-          <p class="work-title">Q&A — Creative Habits</p>
-        </div>
+
+      <!-- FILE: Q&A p1 — overlapping -->
+      <div class="sfile" style="left:28%;top:60%;--base-rotate:rotate(3deg);transform:rotate(3deg)"
+           data-cat="social" data-id="4">
+        <img src="https://peggy-su-portfolio.netlify.app/social%20post/p1.jpg"
+             width="95" height="95" alt="QA p1">
+        <div class="fname">qa-inspiration.jpg</div>
       </div>
-      <div class="work-item" data-cat="social">
-        <img class="work-img" src="https://peggy-su-portfolio.netlify.app/social%20post/p3.jpg" alt="Q&A Memorable Work" loading="lazy" />
-        <div class="work-overlay">
-          <p class="work-label">Social Post</p>
-          <p class="work-title">Q&A — Memorable Work</p>
-        </div>
+
+      <!-- FOLDER: Branding — top right area -->
+      <div class="sfolder" style="right:22%;top:7%"
+           data-cat="branding" data-id="folder-branding">
+        <svg width="62" height="50" viewBox="0 0 62 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1 9C1 6.8 2.8 5 5 5H20L26 11H57C59.2 11 61 12.8 61 15V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V9Z" fill="#7BAEF5"/>
+          <path d="M1 17H61V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V17Z" fill="#A8C8FF"/>
+        </svg>
+        <div class="fname">Branding&amp;Works</div>
       </div>
-      <div class="work-item" data-cat="social">
-        <img class="work-img" src="https://peggy-su-portfolio.netlify.app/social%20post/p4.jpg" alt="Q&A Digital vs Traditional" loading="lazy" />
-        <div class="work-overlay">
-          <p class="work-label">Social Post</p>
-          <p class="work-title">Q&A — Digital vs Traditional</p>
-        </div>
+
+      <!-- FILE: creator banner — right side -->
+      <div class="sfile" style="right:3%;top:32%;--base-rotate:rotate(-2deg);transform:rotate(-2deg)"
+           data-cat="social" data-id="5">
+        <img src="https://peggy-su-portfolio.netlify.app/social%20post/l.jpg"
+             width="128" height="108" alt="Creator Banner">
+        <div class="fname">creator-banner.jpg</div>
       </div>
-      <div class="work-item" data-cat="social">
-        <img class="work-img" src="https://peggy-su-portfolio.netlify.app/social%20post/p5.jpg" alt="Q&A Tools" loading="lazy" />
-        <div class="work-overlay">
-          <p class="work-label">Social Post</p>
-          <p class="work-title">Q&A — Tools</p>
-        </div>
+
+      <!-- FILE: Q&A p2 bottom center -->
+      <div class="sfile" style="left:36%;bottom:9%;--base-rotate:rotate(-2deg);transform:rotate(-2deg)"
+           data-cat="social" data-id="6">
+        <img src="https://peggy-su-portfolio.netlify.app/social%20post/p2.jpg"
+             width="100" height="100" alt="QA p2">
+        <div class="fname">qa-creative.jpg</div>
       </div>
-      <div class="work-item" data-cat="social">
-        <img class="work-img" src="https://peggy-su-portfolio.netlify.app/social%20post/p6.jpg" alt="Q&A Creative Block" loading="lazy" />
-        <div class="work-overlay">
-          <p class="work-label">Social Post</p>
-          <p class="work-title">Q&A — Creative Block</p>
-        </div>
+
+      <!-- FILE: Q&A p3 overlapping -->
+      <div class="sfile" style="left:46%;bottom:13%;--base-rotate:rotate(3deg);transform:rotate(3deg)"
+           data-cat="social" data-id="7">
+        <img src="https://peggy-su-portfolio.netlify.app/social%20post/p3.jpg"
+             width="100" height="100" alt="QA p3">
+        <div class="fname">qa-memorable.jpg</div>
       </div>
-      <div class="work-item" data-cat="social">
-        <img class="work-img" src="https://peggy-su-portfolio.netlify.app/social%20post/p8.jpg" alt="Meitu Creative Project" loading="lazy" />
-        <div class="work-overlay">
-          <p class="work-label">Social Post</p>
-          <p class="work-title">Meitu Creative Project</p>
-        </div>
+
+      <!-- FILE: Meitu creative — bottom right -->
+      <div class="sfile" style="right:4%;bottom:7%;--base-rotate:rotate(1deg);transform:rotate(1deg)"
+           data-cat="social" data-id="8">
+        <img src="https://peggy-su-portfolio.netlify.app/social%20post/p8.jpg"
+             width="120" height="120" alt="Meitu Creative">
+        <div class="fname">meitu-creative.jpg</div>
       </div>
-      <div class="work-item" data-cat="social">
-        <img class="work-img" src="https://peggy-su-portfolio.netlify.app/social%20post/p10.jpg" alt="Q&A Dream Collab" loading="lazy" />
-        <div class="work-overlay">
-          <p class="work-label">Social Post</p>
-          <p class="work-title">Q&A — Dream Collab</p>
-        </div>
+
+      <!-- FOLDER: illustration — bottom right -->
+      <div class="sfolder" style="right:17%;bottom:10%"
+           data-cat="illustration" data-id="folder-illustration">
+        <svg width="62" height="50" viewBox="0 0 62 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1 9C1 6.8 2.8 5 5 5H20L26 11H57C59.2 11 61 12.8 61 15V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V9Z" fill="#A8D5A2"/>
+          <path d="M1 17H61V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V17Z" fill="#C5E8C0"/>
+        </svg>
+        <div class="fname">Illustration</div>
       </div>
-      <div class="work-item" data-cat="social">
-        <img class="work-img" src="https://peggy-su-portfolio.netlify.app/social%20post/p10-1.jpg" alt="Q&A Music Focus" loading="lazy" />
-        <div class="work-overlay">
-          <p class="work-label">Social Post</p>
-          <p class="work-title">Q&A — Music Focus</p>
-        </div>
-      </div>
-    </div>
+
+    </div><!-- /works-scene -->
   </section>
 
   <hr class="section-divider">
@@ -794,45 +898,123 @@
     <span>Design Manager · Taipei, Taiwan</span>
   </footer>
 
-</div><!-- /page-wrap -->
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lb-overlay" id="lb-overlay">
+  <div class="lb-box">
+    <div class="lb-head">
+      <div>
+        <div class="lb-cat" id="lb-cat"></div>
+        <div class="lb-title" id="lb-title"></div>
+      </div>
+      <button class="lb-close" id="lb-close">&#x2715;</button>
+    </div>
+    <div class="lb-body">
+      <p class="lb-desc" id="lb-desc"></p>
+      <div class="lb-imgs" id="lb-imgs"></div>
+      <div class="lb-tags" id="lb-tags"></div>
+    </div>
+  </div>
+</div>
 
 <script>
-  /* Scroll fade */
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('visible');
-        observer.unobserve(e.target);
-      }
-    });
-  }, { threshold: 0.08 });
-  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-
-  /* Works filter */
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const filter = btn.dataset.filter;
-      document.querySelectorAll('.work-item').forEach(item => {
-        if (filter === 'all' || item.dataset.cat === filter) {
-          item.classList.remove('hidden');
-        } else {
-          item.classList.add('hidden');
-        }
-      });
-    });
+/* ── scroll fade ── */
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
   });
+}, { threshold: 0.08 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
-  /* Mobile menu */
-  const hamburger = document.getElementById('hamburger');
-  const navLinks = document.getElementById('nav-links');
-  hamburger.addEventListener('click', () => {
-    navLinks.classList.toggle('open');
-  });
-  function closeMenu() {
-    navLinks.classList.remove('open');
-  }
+/* ── mobile menu ── */
+const hamburger = document.getElementById('hamburger');
+const navLinks  = document.getElementById('nav-links');
+hamburger.addEventListener('click', () => navLinks.classList.toggle('open'));
+function closeMenu() { navLinks.classList.remove('open'); }
+
+/* ── works data ── */
+const B = 'https://peggy-su-portfolio.netlify.app';
+const WORKS = {
+  0: { cat:'Illustration', title:'Mimiko — Queen of Dance',
+       desc:'Character illustration for Meitu\'s creator community. Expressive line work with playful poses capturing energy and personality.',
+       imgs:[B+'/illustration/dancemimi.jpg'],
+       tags:['Character Design','Illustration','Mascot'] },
+  1: { cat:'Illustration', title:'Starry Night Girl',
+       desc:'Editorial illustration exploring a dreamy nighttime aesthetic. Developed as part of an in-app themed content series for Meitu.',
+       imgs:[B+'/illustration/cp_iphone%206plus_1169x2102_pe2.jpg'],
+       tags:['Illustration','Editorial','In-App Content'] },
+  2: { cat:'Branding', title:'Meitu MZ Campaign',
+       desc:'Brand campaign targeting Gen-Z users across Japan and Korea markets. Visual identity balancing global brand direction with local aesthetic preferences.',
+       imgs:[B+'/branding/200B7094-985C-4BAE-A260-8FDD49A127E8.PNG'],
+       tags:['Brand Strategy','Campaign Design','Japan','Korea'] },
+  3: { cat:'Social Post', title:'Creator Spotlight — Cover',
+       desc:'Series cover for Meitu\'s Creator Spotlight — a social content program celebrating the platform\'s creator community with editorial typography.',
+       imgs:[B+'/social%20post/cover.jpg', B+'/social%20post/l.jpg'],
+       tags:['Social Media','Art Direction','Series Design'] },
+  4: { cat:'Social Post', title:'Q&A — Inspiration',
+       desc:'Q&A editorial post exploring creative inspiration. Part of a 10-post social series with consistent visual identity across platforms.',
+       imgs:[B+'/social%20post/p1.jpg', B+'/social%20post/p2.jpg', B+'/social%20post/p3.jpg'],
+       tags:['Social Media','Editorial','Q&A Series'] },
+  5: { cat:'Social Post', title:'Creator Spotlight — Banner',
+       desc:'Horizontal banner format for cross-platform distribution. Adapts the series visual identity for feed and story placements.',
+       imgs:[B+'/social%20post/l.jpg', B+'/social%20post/cover.jpg'],
+       tags:['Social Media','Banner Design','Brand System'] },
+  6: { cat:'Social Post', title:'Q&A — Creative Habits',
+       desc:'Visual Q&A exploring a creator\'s creative habits and daily practice. Clean typographic layout with structured editorial design.',
+       imgs:[B+'/social%20post/p2.jpg', B+'/social%20post/p4.jpg', B+'/social%20post/p5.jpg'],
+       tags:['Social Post','Typography','Editorial'] },
+  7: { cat:'Social Post', title:'Q&A — Memorable Work',
+       desc:'Creator story post focusing on the most memorable project in a creator\'s career. Part of the ongoing Creator Spotlight series.',
+       imgs:[B+'/social%20post/p3.jpg', B+'/social%20post/p6.jpg'],
+       tags:['Social Post','Creator Story','Series'] },
+  8: { cat:'Social Post', title:'Meitu Creative Project',
+       desc:'Campaign post for Meitu\'s in-house creative initiative. Art-directed visual content showcasing platform capabilities and creator output.',
+       imgs:[B+'/social%20post/p8.jpg', B+'/social%20post/p10.jpg', B+'/social%20post/p10-1.jpg'],
+       tags:['Campaign','Creative Direction','Meitu'] },
+  'folder-social': { cat:'Social Post', title:'Social & Posts — Full Series',
+       desc:'All social media posts and creator-series content produced for Meitu across Japan, Korea, and Taiwan markets. A 10+ post editorial series with unified visual language.',
+       imgs:[B+'/social%20post/cover.jpg',B+'/social%20post/l.jpg',B+'/social%20post/p1.jpg',B+'/social%20post/p2.jpg',B+'/social%20post/p3.jpg',B+'/social%20post/p4.jpg',B+'/social%20post/p5.jpg',B+'/social%20post/p6.jpg',B+'/social%20post/p8.jpg',B+'/social%20post/p10.jpg',B+'/social%20post/p10-1.jpg'],
+       tags:['Social Media','Series Design','Content Strategy','Art Direction'] },
+  'folder-branding': { cat:'Branding', title:'Branding & Works',
+       desc:'Brand campaigns, visual identity systems, and campaign design across Meitu, Jomo Corp., and partner brands. Strategy-led creative for APAC markets with measurable outcomes.',
+       imgs:[B+'/branding/200B7094-985C-4BAE-A260-8FDD49A127E8.PNG'],
+       tags:['Brand Strategy','Campaign Design','Visual Identity','APAC'] },
+  'folder-illustration': { cat:'Illustration', title:'Illustration',
+       desc:'Character illustration and editorial art created for in-app content, mascot design, and creative community programs across Meitu\'s global markets.',
+       imgs:[B+'/illustration/dancemimi.jpg', B+'/illustration/cp_iphone%206plus_1169x2102_pe2.jpg'],
+       tags:['Illustration','Character Design','Editorial','In-App Content'] }
+};
+
+/* ── lightbox ── */
+const overlay = document.getElementById('lb-overlay');
+
+function openLB(id) {
+  const d = WORKS[id];
+  if (!d) return;
+  document.getElementById('lb-cat').textContent   = d.cat;
+  document.getElementById('lb-title').textContent = d.title;
+  document.getElementById('lb-desc').textContent  = d.desc;
+  document.getElementById('lb-imgs').innerHTML    = d.imgs.map(s => `<img src="${s}" alt="" loading="lazy">`).join('');
+  document.getElementById('lb-tags').innerHTML    = d.tags.map(t => `<span class="lb-tag">${t}</span>`).join('');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLB() {
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('lb-close').addEventListener('click', closeLB);
+overlay.addEventListener('click', e => { if (e.target === overlay) closeLB(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLB(); });
+
+document.querySelectorAll('.sfile').forEach(el => {
+  el.addEventListener('click', () => openLB(parseInt(el.dataset.id)));
+});
+document.querySelectorAll('.sfolder').forEach(el => {
+  el.addEventListener('click', () => openLB(el.dataset.id));
+});
 </script>
 </body>
 </html>
