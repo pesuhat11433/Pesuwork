@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>首頁卡片產生器</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Bebas+Neue&family=Poppins:wght@400;600;800&family=Playfair+Display:wght@700;900&family=Righteous&family=Anton&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --bg:#f2f2ef; --panel:#ffffff; --ink:#111111;
+    --accent:#c6ff33; --line:#111111; --muted:#6b6b6b;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Poppins',sans-serif;display:flex;height:100vh;overflow:hidden;}
+  .sidebar{width:360px;min-width:360px;background:var(--panel);border-right:2px solid var(--ink);overflow-y:auto;padding:20px;}
+  .stage{flex:1;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:28px;padding:20px;overflow:auto;background:var(--bg);}
+  .stage-col{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+  h1{font-family:'Anton',sans-serif;font-size:22px;margin:0 0 16px;letter-spacing:.3px;text-transform:uppercase;}
+  h2{font-family:'Anton',sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink);margin:20px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--ink);}
+  h2:first-of-type{margin-top:0;}
+  h3{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:12px 0 4px;font-weight:700;}
+  .row{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{flex:1;min-width:70px;padding:9px 6px;background:var(--ink);border:2px solid var(--ink);border-radius:999px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;text-align:center;transition:.15s;}
+  .chip:hover{background:#333;}
+  .chip.active{background:var(--accent);border-color:var(--ink);color:var(--ink);}
+  .layouts{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+  .layout-thumb{aspect-ratio:4/3;border:2px solid var(--ink);border-radius:14px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);position:relative;overflow:hidden;}
+  .layout-thumb.active{border-color:var(--ink);box-shadow:0 0 0 3px var(--accent) inset;}
+  .layout-thumb svg{width:100%;height:100%;padding:4px;}
+  label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin:10px 0 5px;}
+  input[type=text], select, textarea{width:100%;padding:9px 12px;background:#fff;border:2px solid var(--ink);border-radius:14px;color:var(--ink);font-size:12px;font-family:'Poppins',sans-serif;}
+  input[type=range]{width:100%;accent-color:var(--ink);}
+  input[type=color]{width:100%;height:32px;border:2px solid var(--ink);border-radius:10px;background:#fff;padding:2px;}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;margin:10px 0 2px;}
+  .toggle-row span{font-size:11px;font-weight:600;color:var(--ink);}
+  .grp{border:2px solid var(--ink);border-radius:16px;padding:12px;margin-top:8px;background:#fff;}
+  .subgrp{border:1.5px dashed var(--ink);border-radius:12px;padding:10px;margin-top:8px;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .upload-btn{display:block;width:100%;padding:11px;background:#fff;border:2px dashed var(--ink);border-radius:999px;text-align:center;font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;margin-top:6px;}
+  .upload-btn:hover{background:var(--accent);border-style:solid;}
+  .thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+  .thumb-wrap{position:relative;}
+  .thumb-wrap img{width:44px;height:44px;object-fit:cover;border-radius:10px;border:2px solid var(--ink);cursor:pointer;display:block;}
+  .thumb-wrap.sel-1 img{border-color:var(--accent);box-shadow:0 0 0 2px var(--ink);}
+  .thumb-wrap.sel-2 img{border-color:#111;box-shadow:0 0 0 2px var(--accent);}
+.thumb-wrap .idx-num{position:absolute;bottom:-6px;left:-6px;background:#fff;color:var(--ink);border:2px solid var(--ink);font-size:8px;font-weight:900;width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+  .thumb-wrap .badge-num{position:absolute;top:-6px;right:-6px;background:var(--ink);color:var(--accent);font-size:9px;font-weight:900;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+  input[type=file]{display:none;}
+  .canvas-wrap{background:repeating-conic-gradient(#e8e8e4 0% 25%, #f7f7f4 0% 50%) 50%/20px 20px;border-radius:16px;padding:16px;border:2px solid var(--ink);}
+  canvas{display:block;max-width:56vw;max-height:64vh;border-radius:6px;}
+  .dl{padding:13px 30px;background:var(--ink);border:2px solid var(--ink);border-radius:999px;color:#fff;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;}
+  .dl:hover{background:var(--accent);color:var(--ink);}
+  .size-label{font-size:12px;font-weight:700;color:var(--ink);}
+  .fontname-tag{display:inline-block;font-size:10px;font-weight:700;background:var(--accent);border:2px solid var(--ink);border-radius:999px;padding:2px 10px;margin:4px 4px 0 0;color:var(--ink);}
+  .svg-preview{display:flex;align-items:center;gap:8px;margin-top:6px;}
+  .svg-preview img{width:32px;height:32px;background:#fff;border-radius:8px;padding:2px;border:2px solid var(--ink);}
+  .comp-tabs{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;}
+  .comp-tab{flex:1;min-width:60px;padding:8px 4px;background:#fff;border:2px solid var(--ink);border-radius:999px;font-size:11px;font-weight:700;text-align:center;cursor:pointer;color:var(--ink);}
+  .comp-tab.active{background:var(--ink);color:var(--accent);}
+  .hint{font-size:10px;color:var(--muted);line-height:1.5;margin-top:4px;}
+  /* phone mockup — modeled on the 首页-KR home feed frame (status/icons/banner/section + card row) */
+  .phone-frame{width:216px;aspect-ratio:1440/3200;background:var(--ink);border-radius:36px;padding:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);position:relative;}
+  .phone-notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:78px;height:16px;background:var(--ink);border-radius:0 0 12px 12px;z-index:2;}
+  .phone-screen{width:100%;height:100%;background:#ffffff;border-radius:26px;overflow:hidden;display:flex;flex-direction:column;}
+  .ph-status{height:4.2%;display:flex;align-items:center;justify-content:space-between;padding:0 5%;font-size:7px;font-weight:700;color:#111;flex-shrink:0;}
+  .ph-icons{height:9.5%;display:flex;align-items:center;justify-content:space-between;padding:0 5%;flex-shrink:0;}
+  .ph-icons .ic{width:16%;aspect-ratio:1/1;border-radius:50%;background:#eee;border:1px solid #ddd;}
+  .ph-banner{margin:2% 4%;height:7.5%;border-radius:10px;background:linear-gradient(135deg,#e8e8ff,#ffe8f2);flex-shrink:0;}
+  .ph-section-title{padding:2% 5% 1%;font-size:8px;font-weight:800;color:#222;flex-shrink:0;}
+  .ph-row{display:flex;gap:2%;padding:0 4% 3%;flex-shrink:0;align-items:flex-start;}
+  .ph-slot{border-radius:10px;overflow:hidden;background:#e2e2e2;position:relative;flex-shrink:0;}
+  .ph-slot img{width:100%;height:100%;object-fit:cover;display:block;}
+  .ph-slot .cap{position:absolute;bottom:8%;left:0;right:0;text-align:center;font-size:6.5px;font-weight:600;color:#fff;text-shadow:0 0 2px rgba(0,0,0,.8);}
+  .ph-slot.live{outline:2px solid var(--accent);outline-offset:-2px;}
+  .phone-label{font-size:11px;font-weight:700;color:var(--muted);}
+  .preset-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+  .preset-chip{display:flex;align-items:center;gap:4px;padding:6px 10px;background:#fff;border:2px solid var(--ink);border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;}
+  .preset-chip:hover{background:var(--accent);}
+  .preset-chip .x{color:#999;font-weight:900;margin-left:2px;}
+  .preset-chip .x:hover{color:#e03131;}
+  ::-webkit-scrollbar{width:8px;} ::-webkit-scrollbar-thumb{background:#111;border-radius:4px;}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h1>🎴 首頁卡片產生器</h1>
+
+  <h2>已儲存樣式</h2>
+  <button class="upload-btn" id="savePresetBtn" style="border-style:solid;">💾 儲存目前樣式</button>
+  <div class="preset-row" id="presetRow"></div>
+
+  <h2>尺寸</h2>
+  <div class="row" id="sizeRow"></div>
+
+  <h2>版面（Figma 四款）</h2>
+  <div class="layouts" id="layoutRow"></div>
+
+  <h2>模特圖</h2>
+  <label>點縮圖選取：單圖模式選 1 張；拼接模式依序點 2 張（第一次點 = 上/左，第二次點 = 下/右）。左下角灰色數字是圖片編號，批量製作時用來指定要用哪張圖。</label>
+  <label class="upload-btn" for="fileInput">＋ 選擇圖片</label>
+  <input type="file" id="fileInput" accept="image/*" multiple>
+  <div class="thumbs" id="thumbs"></div>
+
+  <label>底圖版式</label>
+  <select id="imgMode">
+    <option value="single">單圖滿版</option>
+    <option value="vertical">上下拼接</option>
+    <option value="horizontal">左右拼接</option>
+  </select>
+  <div id="ratioWrap" style="display:none;">
+    <label>拼接比例</label>
+    <input type="range" id="imgRatio" min="10" max="90" value="50">
+  </div>
+
+  <h2>文字內容</h2>
+  <label>主標題</label>
+  <input type="text" id="titleText" value="Fuji F601">
+  <label>副標題（僅置中款使用）</label>
+  <input type="text" id="subText" value="夏日清涼特輯">
+  <div class="toggle-row"><span>角標 Badge（兩行小標）</span><input type="checkbox" id="badgeOn" checked></div>
+  <input type="text" id="badgeLine1" placeholder="第一行" value="FLASH">
+  <input type="text" id="badgeLine2" placeholder="第二行（可留空）" value="FILTER" style="margin-top:4px;">
+
+  <label class="upload-btn" for="fontInput">＋ 上傳自訂字體 (.ttf / .otf / .woff)，會加入下方各元件的字型選單</label>
+  <input type="file" id="fontInput" accept=".ttf,.otf,.woff,.woff2">
+  <div id="customFontTags"></div>
+
+  <h2>元件樣式（字型／位移／色塊／圖示皆各自獨立）</h2>
+  <div class="comp-tabs" id="compTabs"></div>
+  <div class="grp" id="compPanel"></div>
+</div>
+
+<div class="stage">
+  <div class="stage-col">
+    <div class="size-label" id="sizeLabel">1280 × 720 px（滿版輸出，無外框）</div>
+    <div class="canvas-wrap"><canvas id="cv"></canvas></div>
+    <button class="dl" id="downloadBtn">下載 PNG</button>
+    <div class="grp" style="width:340px;">
+      <label>批量製作（每行一張卡，格式：主標題||副標題||圖片編號，副標題與圖片編號可省略。圖片編號對應上方縮圖左下角的數字）</label>
+      <textarea id="batchText" rows="4" style="resize:vertical;">GRX||||1
+Fuji||夏日限定||2
+Polaroid Classic|||3</textarea>
+      <button class="dl" id="batchBtn" style="width:100%;margin-top:8px;">📦 批量下載 ZIP</button>
+      <div class="hint" id="batchStatus"></div>
+    </div>
+  </div>
+  <div class="stage-col">
+    <div class="phone-label">手機首頁預覽（1440×3200・参考 首页-KR）</div>
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="ph-status"><span>9:41</span><span>●●●</span></div>
+        <div class="ph-icons"><div class="ic"></div><div class="ic"></div><div class="ic"></div><div class="ic"></div></div>
+        <div class="ph-banner"></div>
+        <div class="ph-section-title">지금 인기</div>
+        <div class="ph-row" id="phRow"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SIZES = [
+  {w:1280,h:720,label:'1280×720'},
+  {w:360,h:360,label:'360×360'},
+  {w:360,h:480,label:'360×480'},
+  {w:720,h:960,label:'720×960'},
+];
+const LAYOUT_NAMES = ['標籤款＋圖示（card1）','置中標題款（card2）','標籤款（card3）','置中標題＋副標款（card4）'];
+
+const FONT_OPTIONS = [
+  {value:"'Noto Sans TC',sans-serif", label:'Noto Sans TC'},
+  {value:"'Bebas Neue',sans-serif", label:'Bebas Neue'},
+  {value:"'Poppins',sans-serif", label:'Poppins'},
+  {value:"'Playfair Display',serif", label:'Playfair Display'},
+  {value:"'Righteous',cursive", label:'Righteous'},
+  {value:"'Anton',sans-serif", label:'Anton'},
+];
+
+function newTextStyle(size,weight){
+  return {
+    font:FONT_OPTIONS[0].value, size, color:'#ffffff', weight, offsetX:0, offsetY:0,
+    letterSpacing:0, lineHeight:1.4,
+    outlineOn:false, outlineColor:'#000000', outlineWidth:3,
+    shadowOn:true, shadowColor:'#000000', shadowBlur:8,
+    blockOn:false, blockColor:'#000000', blockOpacity:60, blockPadding:10, blockRadius:8, blockOffsetX:0, blockOffsetY:0
+  };
+}
+let styles = {
+  title:    newTextStyle(37,700),
+  subtitle: newTextStyle(16,500),
+  badge:    newTextStyle(16,400),
+  line:     { color:'#ffffff', width:3, dash:false, offsetX:0, offsetY:0, iconOpacity:100, iconSize:1, tintOn:false,
+    shapeOn:false, shapeType:'rect', shapeColor:'#111111', shapeOpacity:100, shapeW:80, shapeH:80, shapeRadius:0, shapeOffsetX:0, shapeOffsetY:0 }
+};
+const COMPONENTS = [
+  {key:'title', label:'標題'},
+  {key:'subtitle', label:'副標'},
+  {key:'badge', label:'角標'},
+  {key:'line', label:'線條/圖示'}
+];
+let activeComp = 'title';
+
+let state = {
+  sizeIdx:0, layoutIdx:0,
+  images:[], selected:[],
+  imgMode:'single', imgRatio:0.5,
+  svgIcon:null,
+};
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const phoneScreenEl = document.querySelector('.phone-screen');
+const PHONE_REAL_W = 1440, PHONE_REAL_H = 3200;
+
+// ---------- size chips ----------
+const sizeRow = document.getElementById('sizeRow');
+SIZES.forEach((s,i)=>{
+  const c = document.createElement('div');
+  c.className = 'chip' + (i===0?' active':'');
+  c.textContent = s.label;
+  c.onclick = ()=>{ state.sizeIdx=i; refreshChips(); render(); };
+  sizeRow.appendChild(c);
+});
+function refreshChips(){
+  [...sizeRow.children].forEach((c,i)=>c.classList.toggle('active', i===state.sizeIdx));
+  [...layoutRow.children].forEach((c,i)=>c.classList.toggle('active', i===state.layoutIdx));
+  document.getElementById('sizeLabel').textContent = SIZES[state.sizeIdx].label + ' px（滿版輸出，無外框）';
+}
+
+// ---------- layout thumbs ----------
+const layoutRow = document.getElementById('layoutRow');
+const thumbSVGs = [
+  `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#888"/><text x="8" y="20" font-size="9" fill="#fff" font-family="sans-serif">FLASH</text><text x="8" y="30" font-size="9" fill="#fff" font-family="sans-serif">FILTER</text><text x="8" y="88" font-size="15" fill="#fff" font-family="sans-serif">Aa</text><rect x="80" y="80" width="5" height="12" fill="#fff"/></svg>`,
+  `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#888"/><text x="50" y="88" font-size="15" fill="#fff" font-family="sans-serif" text-anchor="middle">Aa</text></svg>`,
+  `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#888"/><text x="8" y="20" font-size="9" fill="#fff" font-family="sans-serif">FLASH</text><text x="8" y="30" font-size="9" fill="#fff" font-family="sans-serif">FILTER</text><text x="8" y="88" font-size="15" fill="#fff" font-family="sans-serif">Aa</text></svg>`,
+  `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#888"/><text x="50" y="82" font-size="15" fill="#fff" font-family="sans-serif" text-anchor="middle">Aa</text><text x="50" y="92" font-size="7" fill="#fff" font-family="sans-serif" text-anchor="middle">subtitle</text></svg>`
+];
+LAYOUT_NAMES.forEach((name,i)=>{
+  const d = document.createElement('div');
+  d.className = 'layout-thumb' + (i===state.layoutIdx?' active':'');
+  d.innerHTML = thumbSVGs[i];
+  d.title = name;
+  d.onclick = ()=>{ state.layoutIdx=i; refreshChips(); render(); };
+  layoutRow.appendChild(d);
+});
+refreshChips();
+
+// ---------- image upload & selection ----------
+const fileInput = document.getElementById('fileInput');
+const thumbsDiv = document.getElementById('thumbs');
+const imgModeSel = document.getElementById('imgMode');
+const ratioWrap = document.getElementById('ratioWrap');
+const imgRatioInput = document.getElementById('imgRatio');
+
+function maxSelectable(){ return state.imgMode==='single' ? 1 : 2; }
+
+function renderThumbs(){
+  thumbsDiv.innerHTML='';
+  state.images.forEach((img,idx)=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'thumb-wrap';
+    const selPos = state.selected.indexOf(idx);
+    if(selPos===0) wrap.classList.add('sel-1');
+    if(selPos===1) wrap.classList.add('sel-2');
+    const t = document.createElement('img');
+    t.src = img.src;
+    wrap.appendChild(t);
+    const idxB = document.createElement('div'); idxB.className='idx-num'; idxB.textContent=idx+1; wrap.appendChild(idxB);
+    if(selPos>-1){ const b=document.createElement('div'); b.className='badge-num'; b.textContent=selPos+1; wrap.appendChild(b); }
+    wrap.onclick = ()=>{
+      const pos = state.selected.indexOf(idx);
+      if(pos>-1){ state.selected.splice(pos,1); }
+      else {
+        state.selected.push(idx);
+        if(state.selected.length > maxSelectable()) state.selected.shift();
+      }
+      renderThumbs(); render();
+    };
+    thumbsDiv.appendChild(wrap);
+  });
+}
+fileInput.addEventListener('change', e=>{
+  [...e.target.files].forEach(f=>{
+    const url = URL.createObjectURL(f);
+    const img = new Image();
+    const idx = state.images.length;
+    img.onload = ()=>{ if(state.selected.includes(idx)) render(); };
+    img.src = url;
+    state.images.push(img);
+    if(state.selected.length < maxSelectable()) state.selected.push(idx);
+  });
+  renderThumbs(); render();
+  fileInput.value = '';
+});
+imgModeSel.addEventListener('change', ()=>{
+  state.imgMode = imgModeSel.value;
+  ratioWrap.style.display = state.imgMode==='single' ? 'none' : 'block';
+  if(state.selected.length > maxSelectable()) state.selected = state.selected.slice(0,maxSelectable());
+  renderThumbs(); render();
+});
+imgRatioInput.addEventListener('input', ()=>{ state.imgRatio = +imgRatioInput.value/100; render(); });
+
+function selectedImages(){ return state.selected.map(i=>state.images[i]).filter(Boolean); }
+
+function drawComposedBackground(x,y,w,h){
+  const imgs = selectedImages();
+  if(imgs.length===0){ ctx.fillStyle='#8a8a8a'; ctx.fillRect(x,y,w,h); return; }
+  if(imgs.length===1 || state.imgMode==='single'){ drawImageCover(imgs[0],x,y,w,h); return; }
+  if(state.imgMode==='vertical'){
+    const h1 = h*state.imgRatio;
+    drawImageCover(imgs[0],x,y,w,h1);
+    drawImageCover(imgs[1],x,y+h1,w,h-h1);
+  } else {
+    const w1 = w*state.imgRatio;
+    drawImageCover(imgs[0],x,y,w1,h);
+    drawImageCover(imgs[1],x+w1,y,w-w1,h);
+  }
+}
+
+// ---------- custom font upload ----------
+const fontInput = document.getElementById('fontInput');
+const customFontTags = document.getElementById('customFontTags');
+fontInput.addEventListener('change', e=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  const name = 'Custom-' + f.name.replace(/\.[^.]+$/,'').replace(/[^a-zA-Z0-9]/g,'');
+  const reader = new FileReader();
+  reader.onload = async ()=>{
+    try{
+      const face = new FontFace(name, reader.result);
+      await face.load();
+      document.fonts.add(face);
+      const value = `'${name}',sans-serif`;
+      FONT_OPTIONS.push({value, label: f.name.replace(/\.[^.]+$/,'') + ' (自訂)'});
+      const tag = document.createElement('span');
+      tag.className='fontname-tag';
+      tag.textContent = '✓ ' + f.name;
+      customFontTags.appendChild(tag);
+      buildCompPanel();
+      render();
+    }catch(err){ alert('字體載入失敗：'+err.message); }
+  };
+  reader.readAsArrayBuffer(f);
+  fontInput.value='';
+});
+
+// ---------- content inputs ----------
+const contentIds = ['titleText','subText','badgeOn','badgeLine1','badgeLine2'];
+contentIds.forEach(id=>{ document.getElementById(id).addEventListener('input', render); });
+
+// ---------- per-component style panel ----------
+const compTabs = document.getElementById('compTabs');
+const compPanel = document.getElementById('compPanel');
+COMPONENTS.forEach(c=>{
+  const t = document.createElement('div');
+  t.className = 'comp-tab' + (c.key===activeComp?' active':'');
+  t.textContent = c.label;
+  t.onclick = ()=>{ activeComp=c.key; [...compTabs.children].forEach(x=>x.classList.remove('active')); t.classList.add('active'); buildCompPanel(); };
+  compTabs.appendChild(t);
+});
+function fontOptionsHTML(selected){
+  return FONT_OPTIONS.map(f=>`<option value="${f.value}" ${f.value===selected?'selected':''}>${f.label}</option>`).join('');
+}
+function buildCompPanel(){
+  const s = styles[activeComp];
+  if(activeComp==='line'){
+    compPanel.innerHTML = `
+      <h3>線條樣式</h3>
+      <div class="two-col">
+        <div><label>顏色</label><input type="color" id="l_color" value="${s.color}"></div>
+        <div><label>粗細</label><input type="range" id="l_width" min="1" max="20" value="${s.width}"></div>
+      </div>
+      <div class="toggle-row"><span>虛線</span><input type="checkbox" id="l_dash" ${s.dash?'checked':''}></div>
+      <div class="two-col">
+        <div><label>水平位移</label><input type="range" id="l_offx" min="-300" max="300" value="${s.offsetX}"></div>
+        <div><label>垂直位移</label><input type="range" id="l_offy" min="-300" max="300" value="${s.offsetY}"></div>
+      </div>
+      <h3>SVG 圖示</h3>
+      <label class="upload-btn" for="svgInput">＋ 匯入 / 更換 SVG 圖示</label>
+      <input type="file" id="svgInput" accept=".svg,image/svg+xml">
+      <div class="svg-preview" id="svgPreview" style="display:${state.svgIcon?'flex':'none'};">
+        <img id="svgPreviewImg" src="${state.svgIcon?state.svgIcon.src:''}">
+        <div class="toggle-row" style="flex:1;margin:0;"><span>套用為裝飾圖示</span><input type="checkbox" id="useSvgIcon"></div>
+      </div>
+      <div class="two-col">
+        <div><label>大小倍率</label><input type="range" id="l_iconSize" min="20" max="300" value="${s.iconSize*100}"></div>
+        <div><label>透明度</label><input type="range" id="l_iconOpacity" min="0" max="100" value="${s.iconOpacity}"></div>
+      </div>
+      <div class="toggle-row"><span>套用線條顏色（單色化）</span><input type="checkbox" id="l_tintOn" ${s.tintOn?'checked':''}></div>
+      <h3>色塊形狀</h3>
+      <div class="subgrp">
+        <div class="toggle-row"><span>顯示色塊</span><input type="checkbox" id="l_shapeOn" ${s.shapeOn?'checked':''}></div>
+        <label>形狀</label>
+        <select id="l_shapeType">
+          <option value="rect" ${s.shapeType==='rect'?'selected':''}>方形</option>
+          <option value="circle" ${s.shapeType==='circle'?'selected':''}>圓形</option>
+          <option value="pill" ${s.shapeType==='pill'?'selected':''}>膠囊</option>
+        </select>
+        <div class="two-col">
+          <div><label>顏色</label><input type="color" id="l_shapeColor" value="${s.shapeColor}"></div>
+          <div><label>透明度</label><input type="range" id="l_shapeOpacity" min="0" max="100" value="${s.shapeOpacity}"></div>
+        </div>
+        <div class="two-col">
+          <div><label>寬度</label><input type="range" id="l_shapeW" min="4" max="600" value="${s.shapeW}"></div>
+          <div><label>高度</label><input type="range" id="l_shapeH" min="4" max="600" value="${s.shapeH}"></div>
+        </div>
+        <label>圓角</label>
+        <input type="range" id="l_shapeRadius" min="0" max="300" value="${s.shapeRadius}">
+        <div class="two-col">
+          <div><label>水平位置</label><input type="range" id="l_shapeOffX" min="-600" max="600" value="${s.shapeOffsetX}"></div>
+          <div><label>垂直位置</label><input type="range" id="l_shapeOffY" min="-600" max="600" value="${s.shapeOffsetY}"></div>
+        </div>
+      </div>
+    `;
+    document.getElementById('l_color').oninput = e=>{ s.color=e.target.value; render(); };
+    document.getElementById('l_width').oninput = e=>{ s.width=+e.target.value; render(); };
+    document.getElementById('l_dash').onchange = e=>{ s.dash=e.target.checked; render(); };
+    document.getElementById('l_offx').oninput = e=>{ s.offsetX=+e.target.value; render(); };
+    document.getElementById('l_offy').oninput = e=>{ s.offsetY=+e.target.value; render(); };
+    document.getElementById('l_iconSize').oninput = e=>{ s.iconSize=+e.target.value/100; render(); };
+    document.getElementById('l_iconOpacity').oninput = e=>{ s.iconOpacity=+e.target.value; render(); };
+    document.getElementById('l_tintOn').onchange = e=>{ s.tintOn=e.target.checked; render(); };
+    document.getElementById('l_shapeOn').onchange = e=>{ s.shapeOn=e.target.checked; render(); };
+    document.getElementById('l_shapeType').onchange = e=>{ s.shapeType=e.target.value; render(); };
+    document.getElementById('l_shapeColor').oninput = e=>{ s.shapeColor=e.target.value; render(); };
+    document.getElementById('l_shapeOpacity').oninput = e=>{ s.shapeOpacity=+e.target.value; render(); };
+    document.getElementById('l_shapeW').oninput = e=>{ s.shapeW=+e.target.value; render(); };
+    document.getElementById('l_shapeH').oninput = e=>{ s.shapeH=+e.target.value; render(); };
+    document.getElementById('l_shapeRadius').oninput = e=>{ s.shapeRadius=+e.target.value; render(); };
+    document.getElementById('l_shapeOffX').oninput = e=>{ s.shapeOffsetX=+e.target.value; render(); };
+    document.getElementById('l_shapeOffY').oninput = e=>{ s.shapeOffsetY=+e.target.value; render(); };
+    document.getElementById('svgInput').addEventListener('change', e=>{
+      const f = e.target.files[0]; if(!f) return;
+      const url = URL.createObjectURL(f);
+      const img = new Image();
+      img.onload = ()=>{ state.svgIcon = img; buildCompPanel(); render(); };
+      img.src = url;
+    });
+    const useSvg = document.getElementById('useSvgIcon');
+    if(useSvg) useSvg.onchange = render;
+    return;
+  }
+  compPanel.innerHTML = `
+    <h3>文字</h3>
+    <label>字型</label>
+    <select id="c_font">${fontOptionsHTML(s.font)}</select>
+    <div class="two-col">
+      <div><label>字級</label><input type="range" id="c_size" min="8" max="140" value="${s.size}"></div>
+      <div><label>顏色</label><input type="color" id="c_color" value="${s.color}"></div>
+    </div>
+    <label>字重</label>
+    <select id="c_weight">
+      <option value="400" ${s.weight==400?'selected':''}>Regular</option>
+      <option value="500" ${s.weight==500?'selected':''}>Medium</option>
+      <option value="700" ${s.weight==700?'selected':''}>Bold</option>
+      <option value="800" ${s.weight==800?'selected':''}>ExtraBold</option>
+      <option value="900" ${s.weight==900?'selected':''}>Black</option>
+    </select>
+    <div class="two-col">
+      <div><label>水平位移</label><input type="range" id="c_offx" min="-300" max="300" value="${s.offsetX}"></div>
+      <div><label>垂直位移</label><input type="range" id="c_offy" min="-300" max="300" value="${s.offsetY}"></div>
+    </div>
+    <div class="two-col">
+      <div><label>字距 Letter-spacing</label><input type="range" id="c_letterSpacing" min="-10" max="40" value="${s.letterSpacing}"></div>
+      <div><label>行距 Line-height</label><input type="range" id="c_lineHeight" min="0.8" max="3" step="0.05" value="${s.lineHeight}"></div>
+    </div>
+    <div class="toggle-row"><span>外框 Outline</span><input type="checkbox" id="c_outlineOn" ${s.outlineOn?'checked':''}></div>
+    <div class="two-col">
+      <div><label>顏色</label><input type="color" id="c_outlineColor" value="${s.outlineColor}"></div>
+      <div><label>粗細</label><input type="range" id="c_outlineWidth" min="1" max="10" value="${s.outlineWidth}"></div>
+    </div>
+    <div class="toggle-row"><span>陰影 Shadow</span><input type="checkbox" id="c_shadowOn" ${s.shadowOn?'checked':''}></div>
+    <div class="two-col">
+      <div><label>顏色</label><input type="color" id="c_shadowColor" value="${s.shadowColor}"></div>
+      <div><label>模糊</label><input type="range" id="c_shadowBlur" min="0" max="30" value="${s.shadowBlur}"></div>
+    </div>
+    <h3>色塊背景</h3>
+    <div class="subgrp">
+      <div class="toggle-row"><span>顯示色塊</span><input type="checkbox" id="c_blockOn" ${s.blockOn?'checked':''}></div>
+      <div class="two-col">
+        <div><label>顏色</label><input type="color" id="c_blockColor" value="${s.blockColor}"></div>
+        <div><label>透明度</label><input type="range" id="c_blockOpacity" min="0" max="100" value="${s.blockOpacity}"></div>
+      </div>
+      <div class="two-col">
+        <div><label>比例（padding）</label><input type="range" id="c_blockPadding" min="0" max="60" value="${s.blockPadding}"></div>
+        <div><label>圓角</label><input type="range" id="c_blockRadius" min="0" max="60" value="${s.blockRadius}"></div>
+      </div>
+      <div class="two-col">
+        <div><label>色塊水平位移</label><input type="range" id="c_blockOffX" min="-100" max="100" value="${s.blockOffsetX}"></div>
+        <div><label>色塊垂直位移</label><input type="range" id="c_blockOffY" min="-100" max="100" value="${s.blockOffsetY}"></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('c_font').onchange = e=>{ s.font=e.target.value; render(); };
+  document.getElementById('c_size').oninput = e=>{ s.size=+e.target.value; render(); };
+  document.getElementById('c_color').oninput = e=>{ s.color=e.target.value; render(); };
+  document.getElementById('c_weight').onchange = e=>{ s.weight=+e.target.value; render(); };
+  document.getElementById('c_offx').oninput = e=>{ s.offsetX=+e.target.value; render(); };
+  document.getElementById('c_offy').oninput = e=>{ s.offsetY=+e.target.value; render(); };
+  document.getElementById('c_letterSpacing').oninput = e=>{ s.letterSpacing=+e.target.value; render(); };
+  document.getElementById('c_lineHeight').oninput = e=>{ s.lineHeight=+e.target.value; render(); };
+  document.getElementById('c_outlineOn').onchange = e=>{ s.outlineOn=e.target.checked; render(); };
+  document.getElementById('c_outlineColor').oninput = e=>{ s.outlineColor=e.target.value; render(); };
+  document.getElementById('c_outlineWidth').oninput = e=>{ s.outlineWidth=+e.target.value; render(); };
+  document.getElementById('c_shadowOn').onchange = e=>{ s.shadowOn=e.target.checked; render(); };
+  document.getElementById('c_shadowColor').oninput = e=>{ s.shadowColor=e.target.value; render(); };
+  document.getElementById('c_shadowBlur').oninput = e=>{ s.shadowBlur=+e.target.value; render(); };
+  document.getElementById('c_blockOn').onchange = e=>{ s.blockOn=e.target.checked; render(); };
+  document.getElementById('c_blockColor').oninput = e=>{ s.blockColor=e.target.value; render(); };
+  document.getElementById('c_blockOpacity').oninput = e=>{ s.blockOpacity=+e.target.value; render(); };
+  document.getElementById('c_blockPadding').oninput = e=>{ s.blockPadding=+e.target.value; render(); };
+  document.getElementById('c_blockRadius').oninput = e=>{ s.blockRadius=+e.target.value; render(); };
+  document.getElementById('c_blockOffX').oninput = e=>{ s.blockOffsetX=+e.target.value; render(); };
+  document.getElementById('c_blockOffY').oninput = e=>{ s.blockOffsetY=+e.target.value; render(); };
+}
+buildCompPanel();
+
+// ---------- drawing helpers ----------
+function drawImageCover(img,x,y,w,h){
+  const ir = img.width/img.height, tr = w/h;
+  let sx,sy,sw,sh;
+  if(ir > tr){ sh=img.height; sw=sh*tr; sx=(img.width-sw)/2; sy=0; }
+  else{ sw=img.width; sh=sw/tr; sx=0; sy=(img.height-sh)/2; }
+  ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
+}
+function roundRectPath(x,y,w,h,r){
+  r = Math.max(0, Math.min(r, Math.min(w,h)/2));
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+function gv(id){ return document.getElementById(id).value; }
+function gc(id){ return document.getElementById(id).checked; }
+
+function drawTextBlock(c,text,x,y,align){
+  if(!c.blockOn) return;
+  ctx.font = `${c.weight} ${c.size}px ${c.font}`;
+  const tw = measureSpaced(ctx,text,c.letterSpacing);
+  const pad = c.blockPadding;
+  let bx;
+  if(align==='center') bx = x - tw/2 - pad;
+  else if(align==='right') bx = x - tw - pad;
+  else bx = x - pad;
+  bx += c.blockOffsetX;
+  const by = y - c.size*0.95 - pad + c.blockOffsetY;
+  const bw = tw + pad*2;
+  const bh = c.size*1.25 + pad*2;
+  ctx.save();
+  ctx.globalAlpha = c.blockOpacity/100;
+  roundRectPath(bx,by,bw,bh,c.blockRadius);
+  ctx.fillStyle = c.blockColor;
+  ctx.fill();
+  ctx.restore();
+}
+
+function measureSpaced(ctx,text,letterSpacing){
+  let w = ctx.measureText(text).width;
+  if(text.length>1) w += letterSpacing*(text.length-1);
+  return w;
+}
+function fillSpacedText(ctx,text,x,y,align,letterSpacing,stroke){
+  if(!letterSpacing){
+    ctx.textAlign = align;
+    if(stroke) ctx.strokeText(text,x,y); else ctx.fillText(text,x,y);
+    return;
+  }
+  const totalW = measureSpaced(ctx,text,letterSpacing);
+  let startX;
+  if(align==='center') startX = x - totalW/2;
+  else if(align==='right') startX = x - totalW;
+  else startX = x;
+  ctx.textAlign = 'left';
+  let cx = startX;
+  for(const ch of text){
+    if(stroke) ctx.strokeText(ch,cx,y); else ctx.fillText(ch,cx,y);
+    cx += ctx.measureText(ch).width + letterSpacing;
+  }
+}
+
+// draws text using a named component's style (own font, offset, letter-spacing, optional block)
+function styledText(compKey,text,x,y,align){
+  const c = styles[compKey];
+  x += c.offsetX; y += c.offsetY;
+  drawTextBlock(c,text,x,y,align);
+  ctx.font = `${c.weight} ${c.size}px ${c.font}`;
+  ctx.textBaseline = 'alphabetic';
+  if(c.shadowOn){ ctx.shadowColor=c.shadowColor; ctx.shadowBlur=c.shadowBlur; ctx.shadowOffsetY=c.shadowBlur*0.25; }
+  else { ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetY=0; }
+  if(c.outlineOn){ ctx.lineWidth=c.outlineWidth; ctx.strokeStyle=c.outlineColor; fillSpacedText(ctx,text,x,y,align||'left',c.letterSpacing,true); }
+  ctx.fillStyle = c.color;
+  fillSpacedText(ctx,text,x,y,align||'left',c.letterSpacing,false);
+  ctx.shadowColor='transparent'; ctx.shadowBlur=0;
+}
+
+function collectGlobal(){
+  return {
+    title: gv('titleText'), sub: gv('subText'),
+    badgeOn: gc('badgeOn'), badgeLine1: gv('badgeLine1'), badgeLine2: gv('badgeLine2'),
+    useSvgIcon: (document.getElementById('useSvgIcon')?document.getElementById('useSvgIcon').checked:false) && !!state.svgIcon
+  };
+}
+
+function drawTintedIcon(img,x,y,w,h,color,opacity){
+  const off = document.createElement('canvas'); off.width=Math.max(1,Math.round(w)); off.height=Math.max(1,Math.round(h));
+  const octx = off.getContext('2d');
+  octx.drawImage(img,0,0,off.width,off.height);
+  octx.globalCompositeOperation='source-in';
+  octx.fillStyle=color;
+  octx.fillRect(0,0,off.width,off.height);
+  ctx.save(); ctx.globalAlpha=opacity; ctx.drawImage(off,x,y,w,h); ctx.restore();
+}
+
+// icon slot: draws uploaded SVG (with size/opacity/tint from the line component) or a fallback shape
+function drawIconSlot(g,cx,cy,baseSize,defaultDraw){
+  const l = styles.line;
+  cx += l.offsetX; cy += l.offsetY;
+  const size = baseSize * l.iconSize;
+  if(g.useSvgIcon){
+    const im = state.svgIcon;
+    const r = im.width/im.height;
+    let w=size,h=size;
+    if(r>1) h=size/r; else w=size*r;
+    if(l.tintOn) drawTintedIcon(im, cx-w/2, cy-h/2, w, h, l.color, l.iconOpacity/100);
+    else { ctx.save(); ctx.globalAlpha=l.iconOpacity/100; ctx.drawImage(im, cx-w/2, cy-h/2, w, h); ctx.restore(); }
+  } else if(defaultDraw){ defaultDraw(cx,cy,size); }
+}
+
+function drawLine(x,y,w,h){
+  const l = styles.line;
+  x += l.offsetX; y += l.offsetY;
+  ctx.fillStyle = l.color;
+  if(l.dash){
+    const dashLen = Math.max(4,w/8);
+    for(let dx=0; dx<w; dx+=dashLen*2){ ctx.fillRect(x+dx,y,Math.min(dashLen,w-dx),h); }
+  } else {
+    ctx.fillRect(x,y,w,h);
+  }
+}
+
+function drawBlockShape(W,H){
+  const s = styles.line;
+  if(!s.shapeOn) return;
+  const cx = W/2 + s.shapeOffsetX, cy = H/2 + s.shapeOffsetY;
+  ctx.save();
+  ctx.globalAlpha = s.shapeOpacity/100;
+  ctx.fillStyle = s.shapeColor;
+  if(s.shapeType==='circle'){
+    const r = Math.min(s.shapeW,s.shapeH)/2;
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+  } else {
+    const r = s.shapeType==='pill' ? Math.min(s.shapeW,s.shapeH)/2 : s.shapeRadius;
+    roundRectPath(cx-s.shapeW/2, cy-s.shapeH/2, s.shapeW, s.shapeH, r);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ---------- 4 layouts, matching the Figma reference frames exactly (no color-block backgrounds by default) ----------
+
+// card1 — Rectangle6: badge two-line label top-left + title bottom-left + small accent icon
+function layoutCard1(g,W,H){
+  drawComposedBackground(0,0,W,H);
+  drawBlockShape(W,H);
+  const bx = W*(37/360), by = H*(33/480);
+  if(g.badgeOn){
+    styledText('badge', g.badgeLine1, bx, by+styles.badge.size, 'left');
+    if(g.badgeLine2) styledText('badge', g.badgeLine2, bx, by+styles.badge.size*styles.badge.lineHeight, 'left');
+  }
+  const tx = W*(37/360), ty = H*(405/480)+styles.title.size*0.35;
+  styledText('title', g.title, tx, ty, 'left');
+  const ix = W*(302/360)+W*0.026, iy = H*(405/480)+H*0.02;
+  drawIconSlot(g, ix, iy, Math.min(W,H)*0.09, (cx,cy,size)=>{
+    drawLine(cx-styles.line.width/2, cy-size*0.55, styles.line.width, size);
+  });
+}
+
+// card2 — Rectangle7: centered title only, bottom of frame
+function layoutCard2(g,W,H){
+  drawComposedBackground(0,0,W,H);
+  drawBlockShape(W,H);
+  styledText('title', g.title, W/2, H*(405/480)+styles.title.size*0.35, 'center');
+}
+
+// card3 — Rectangle8: same as card1 but no icon
+function layoutCard3(g,W,H){
+  drawComposedBackground(0,0,W,H);
+  drawBlockShape(W,H);
+  const bx = W*(37/360), by = H*(33/480);
+  if(g.badgeOn){
+    styledText('badge', g.badgeLine1, bx, by+styles.badge.size, 'left');
+    if(g.badgeLine2) styledText('badge', g.badgeLine2, bx, by+styles.badge.size*styles.badge.lineHeight, 'left');
+  }
+  const tx = W*(37/360), ty = H*(405/480)+styles.title.size*0.35;
+  styledText('title', g.title, tx, ty, 'left');
+}
+
+// card4 — Rectangle9: centered title + subtitle line beneath
+function layoutCard4(g,W,H){
+  drawComposedBackground(0,0,W,H);
+  drawBlockShape(W,H);
+  const ty = H*(405/480)+styles.title.size*0.35;
+  styledText('title', g.title, W/2, ty, 'center');
+  if(g.sub) styledText('subtitle', g.sub, W/2, ty+styles.subtitle.size*styles.subtitle.lineHeight, 'center');
+}
+
+const LAYOUTS = [layoutCard1, layoutCard2, layoutCard3, layoutCard4];
+
+// ---------- main render (always full-bleed export, no border/clip) ----------
+function buildPhoneRow(){
+  const sz = SIZES[state.sizeIdx];
+  const ar = sz.w/sz.h;
+  const phRow = document.getElementById('phRow');
+  phRow.innerHTML = '';
+  let count, slotAR, captions;
+  if(ar >= 1.3){ count = 1; slotAR = ar; captions=[]; }
+  else if(Math.abs(ar-1) < 0.05){ count = 4; slotAR = 1; captions=['Sunset','Flash','Sunset']; }
+  else { count = 3; slotAR = ar; captions=['Flash','Sunset']; }
+  for(let i=0;i<count;i++){
+    const slot = document.createElement('div');
+    slot.className = 'ph-slot' + (i===0?' live':'');
+    const widthPct = count===1 ? 92 : (100 - (count-1)*2)/count;
+    slot.style.flex = `0 0 ${widthPct}%`;
+    slot.style.aspectRatio = slotAR;
+    if(i===0){
+      const img = document.createElement('img');
+      img.id = 'phonePreviewImg';
+      slot.appendChild(img);
+    } else {
+      const cap = document.createElement('div');
+      cap.className='cap';
+      cap.textContent = captions[i-1] || '';
+      slot.appendChild(cap);
+    }
+    phRow.appendChild(slot);
+  }
+}
+
+function render(){
+  const sz = SIZES[state.sizeIdx];
+  cv.width = sz.w; cv.height = sz.h;
+  const g = collectGlobal();
+  ctx.clearRect(0,0,sz.w,sz.h);
+  LAYOUTS[state.layoutIdx](g,sz.w,sz.h);
+  buildPhoneRow();
+  const phoneImg = document.getElementById('phonePreviewImg');
+  phoneImg.src = cv.toDataURL('image/png');
+}
+
+document.getElementById('downloadBtn').onclick = ()=>{
+  const link = document.createElement('a');
+  const sz = SIZES[state.sizeIdx];
+  link.download = `card_${sz.w}x${sz.h}_layout${state.layoutIdx+1}.png`;
+  link.href = cv.toDataURL('image/png');
+  link.click();
+};
+
+// ---------- saved style presets (in-memory for this session) ----------
+let presets = [];
+function snapshotState(){
+  return {
+    styles: JSON.parse(JSON.stringify(styles)),
+    layoutIdx: state.layoutIdx, sizeIdx: state.sizeIdx,
+    imgMode: state.imgMode, imgRatio: state.imgRatio,
+    titleText: gv('titleText'), subText: gv('subText'),
+    badgeOn: gc('badgeOn'), badgeLine1: gv('badgeLine1'), badgeLine2: gv('badgeLine2'),
+  };
+}
+function applySnapshot(snap){
+  styles = JSON.parse(JSON.stringify(snap.styles));
+  state.layoutIdx = snap.layoutIdx; state.sizeIdx = snap.sizeIdx;
+  state.imgMode = snap.imgMode; state.imgRatio = snap.imgRatio;
+  document.getElementById('titleText').value = snap.titleText;
+  document.getElementById('subText').value = snap.subText;
+  document.getElementById('badgeOn').checked = snap.badgeOn;
+  document.getElementById('badgeLine1').value = snap.badgeLine1;
+  document.getElementById('badgeLine2').value = snap.badgeLine2;
+  imgModeSel.value = state.imgMode;
+  ratioWrap.style.display = state.imgMode==='single' ? 'none' : 'block';
+  imgRatioInput.value = state.imgRatio*100;
+  refreshChips();
+  buildCompPanel();
+  render();
+}
+function renderPresetRow(){
+  const row = document.getElementById('presetRow');
+  row.innerHTML='';
+  presets.forEach((p,i)=>{
+    const chip = document.createElement('div');
+    chip.className='preset-chip';
+    const nameSpan = document.createElement('span'); nameSpan.textContent = p.name;
+    nameSpan.onclick = ()=> applySnapshot(p.data);
+    const xSpan = document.createElement('span'); xSpan.className='x'; xSpan.textContent='✕';
+    xSpan.onclick = (e)=>{ e.stopPropagation(); presets.splice(i,1); renderPresetRow(); };
+    chip.appendChild(nameSpan); chip.appendChild(xSpan);
+    row.appendChild(chip);
+  });
+}
+document.getElementById('savePresetBtn').onclick = ()=>{
+  const name = prompt('幫這個樣式命名：', `樣式 ${presets.length+1}`);
+  if(!name) return;
+  presets.push({name, data: snapshotState()});
+  renderPresetRow();
+};
+
+// ---------- batch production (zip export) ----------
+document.getElementById('batchBtn').onclick = async ()=>{
+  const status = document.getElementById('batchStatus');
+  if(typeof JSZip==='undefined'){ status.textContent='JSZip 載入失敗，請檢查網路連線後重新整理頁面'; return; }
+  const lines = document.getElementById('batchText').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(lines.length===0){ status.textContent='請至少輸入一行'; return; }
+  const titleEl = document.getElementById('titleText'), subEl = document.getElementById('subText');
+  const origTitle = titleEl.value, origSub = subEl.value;
+  const origSelected = [...state.selected], origImgMode = state.imgMode;
+  const sz = SIZES[state.sizeIdx];
+  const zip = new JSZip();
+  for(let i=0;i<lines.length;i++){
+    status.textContent = `製作中... (${i+1}/${lines.length})`;
+    const parts = lines[i].split('||');
+    titleEl.value = (parts[0]||'').trim();
+    subEl.value = (parts[1]||'').trim();
+    const imgIdxStr = (parts[2]||'').trim();
+    if(imgIdxStr){
+      const n = parseInt(imgIdxStr,10);
+      if(n>=1 && n<=state.images.length){ state.imgMode='single'; state.selected=[n-1]; }
+    }
+    render();
+    await new Promise(r=>setTimeout(r,20));
+    const dataUrl = cv.toDataURL('image/png');
+    const base64 = dataUrl.split(',')[1];
+    const safeName = ((parts[0]||('card'+(i+1))).trim().replace(/[^a-zA-Z0-9\u4e00-\u9fff]+/g,'_').slice(0,30)) || ('card'+(i+1));
+    zip.file(`${String(i+1).padStart(2,'0')}_${safeName}_${sz.w}x${sz.h}.png`, base64, {base64:true});
+  }
+  titleEl.value = origTitle; subEl.value = origSub;
+  state.selected = origSelected; state.imgMode = origImgMode;
+  imgModeSel.value = state.imgMode;
+  ratioWrap.style.display = state.imgMode==='single' ? 'none' : 'block';
+  renderThumbs(); render();
+  status.textContent = '打包中...';
+  const blob = await zip.generateAsync({type:'blob'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='cards_batch.zip'; a.click();
+  status.textContent = `完成！已下載 ${lines.length} 張卡片的 ZIP，每張的文字與模特圖已依每行設定套用`;
+};
+
+document.fonts.ready.then(render);
+render();
+</script>
+</body>
+</html>
