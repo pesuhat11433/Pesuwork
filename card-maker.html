@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>首頁卡片產生器</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Bebas+Neue&family=Poppins:wght@400;600;800&family=Playfair+Display:wght@700;900&family=Righteous&family=Anton&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root{
     --bg:#f2f2ef; --panel:#ffffff; --ink:#111111;
@@ -20,6 +19,12 @@
   h2:first-of-type{margin-top:0;}
   h3{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:12px 0 4px;font-weight:700;}
   .row{display:flex;gap:6px;flex-wrap:wrap;}
+  .card-row-scroll{display:flex;gap:6px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px;scrollbar-width:thin;}
+  .card-row-scroll .chip{flex:0 0 auto;min-width:56px;white-space:nowrap;}
+  .card-group{margin-bottom:8px;}
+  .card-group-label{font-size:10px;font-weight:800;color:var(--muted);margin-bottom:4px;letter-spacing:.5px;}
+  .card-group-label-input{font-size:10px;font-weight:800;color:var(--ink);margin-bottom:4px;letter-spacing:.5px;border:none;border-bottom:1px dashed #bbb;background:transparent;padding:2px 0;width:100%;font-family:inherit;}
+  .card-group-label-input:focus{outline:none;border-bottom-color:var(--ink);}
   .chip{flex:1;min-width:70px;padding:9px 6px;background:var(--ink);border:2px solid var(--ink);border-radius:999px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;text-align:center;transition:.15s;}
   .chip:hover{background:#333;}
   .chip.active{background:var(--accent);border-color:var(--ink);color:var(--ink);}
@@ -44,9 +49,26 @@
   .thumb-wrap.sel-1 img{border-color:var(--accent);box-shadow:0 0 0 2px var(--ink);}
   .thumb-wrap.sel-2 img{border-color:#111;box-shadow:0 0 0 2px var(--accent);}
 .thumb-wrap .idx-num{position:absolute;bottom:-6px;left:-6px;background:#fff;color:var(--ink);border:2px solid var(--ink);font-size:8px;font-weight:900;width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+  .thumb-wrap .del-btn{position:absolute;top:-6px;left:-6px;background:#e03131;color:#fff;border:2px solid #fff;font-size:9px;font-weight:900;width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;}
   .thumb-wrap .badge-num{position:absolute;top:-6px;right:-6px;background:var(--ink);color:var(--accent);font-size:9px;font-weight:900;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
   input[type=file]{display:none;}
   .canvas-wrap{background:repeating-conic-gradient(#e8e8e4 0% 25%, #f7f7f4 0% 50%) 50%/20px 20px;border-radius:16px;padding:16px;border:2px solid var(--ink);}
+  .canvas-stage{position:relative;display:inline-block;line-height:0;}
+  .center-guide{position:absolute;inset:0;pointer-events:none;}
+  .center-guide .marks{display:none;}
+  .center-guide.show-center .marks{display:block;}
+  .center-guide i{position:absolute;background:rgba(198,255,51,.9);}
+  .center-guide .v-mid{left:50%;top:0;bottom:0;width:1px;margin-left:-0.5px;}
+  .center-guide .h-mid{top:50%;left:0;right:0;height:1px;margin-top:-0.5px;}
+  .center-guide .v-third{top:0;bottom:0;width:1px;background:rgba(17,17,17,.35);}
+  .center-guide .h-third{left:0;right:0;height:1px;background:rgba(17,17,17,.35);}
+  .center-guide .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);border:1px solid var(--ink);left:50%;top:50%;margin:-3px 0 0 -3px;}
+  .center-guide .grid{position:absolute;inset:0;display:none;background-image:
+    repeating-linear-gradient(to right, rgba(17,17,17,.28) 0 1px, transparent 1px 10%),
+    repeating-linear-gradient(to bottom, rgba(17,17,17,.28) 0 1px, transparent 1px 10%);}
+  .center-guide.show-grid .grid{display:block;}
+  .guide-toggle{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--ink);}
+  .guide-toggles{display:flex;gap:14px;flex-wrap:wrap;}
   canvas{display:block;max-width:56vw;max-height:64vh;border-radius:6px;}
   .dl{padding:13px 30px;background:var(--ink);border:2px solid var(--ink);border-radius:999px;color:#fff;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;}
   .dl:hover{background:var(--accent);color:var(--ink);}
@@ -57,6 +79,7 @@
   .comp-tabs{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;}
   .comp-tab{flex:1;min-width:60px;padding:8px 4px;background:#fff;border:2px solid var(--ink);border-radius:999px;font-size:11px;font-weight:700;text-align:center;cursor:pointer;color:var(--ink);}
   .comp-tab.active{background:var(--ink);color:var(--accent);}
+  .comp-tab.comp-tab-disabled{opacity:.35;cursor:not-allowed;background:#eee;color:#999;border-color:#ccc;}
   .hint{font-size:10px;color:var(--muted);line-height:1.5;margin-top:4px;}
   /* phone mockup — modeled on the 首页-KR home feed frame (status/icons/banner/section + card row) */
   .phone-frame{width:216px;aspect-ratio:1440/3200;background:var(--ink);border-radius:36px;padding:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);position:relative;}
@@ -66,8 +89,13 @@
   .ph-icons{height:9.5%;display:flex;align-items:center;justify-content:space-between;padding:0 5%;flex-shrink:0;}
   .ph-icons .ic{width:16%;aspect-ratio:1/1;border-radius:50%;background:#eee;border:1px solid #ddd;}
   .ph-banner{margin:2% 4%;height:7.5%;border-radius:10px;background:linear-gradient(135deg,#e8e8ff,#ffe8f2);flex-shrink:0;}
-  .ph-section-title{padding:2% 5% 1%;font-size:8px;font-weight:800;color:#222;flex-shrink:0;}
-  .ph-row{display:flex;gap:2%;padding:0 4% 3%;flex-shrink:0;align-items:flex-start;}
+  .ph-sections{flex:1;overflow-y:auto;scrollbar-width:thin;}
+  .ph-section{padding-top:1.5%;}
+  .ph-section.active-card{background:rgba(198,255,51,.16);}
+  .ph-section-title{padding:2% 5% 1%;font-size:8px;font-weight:800;color:#222;}
+  .ph-row{display:flex;gap:2%;padding:0 4% 3%;align-items:flex-start;}
+  .ph-row-scroll{overflow-x:auto;scrollbar-width:thin;}
+  .ph-row-scroll .ph-slot{flex-shrink:0;}
   .ph-slot{border-radius:10px;overflow:hidden;background:#e2e2e2;position:relative;flex-shrink:0;}
   .ph-slot img{width:100%;height:100%;object-fit:cover;display:block;}
   .ph-slot .cap{position:absolute;bottom:8%;left:0;right:0;text-align:center;font-size:6.5px;font-weight:600;color:#fff;text-shadow:0 0 2px rgba(0,0,0,.8);}
@@ -86,9 +114,9 @@
 <div class="sidebar">
   <h1>🎴 首頁卡片產生器</h1>
 
-  <h2>已儲存樣式</h2>
-  <button class="upload-btn" id="savePresetBtn" style="border-style:solid;">💾 儲存目前樣式</button>
-  <div class="preset-row" id="presetRow"></div>
+  <h2>卡片配置（最多 10 組）</h2>
+  <div id="cardRow"></div>
+  <button class="upload-btn" id="dupCardBtn" style="border-style:solid;">➕ 複製目前卡片，新增下一張</button>
 
   <h2>尺寸</h2>
   <div class="row" id="sizeRow"></div>
@@ -110,17 +138,13 @@
   </select>
   <div id="ratioWrap" style="display:none;">
     <label>拼接比例</label>
-    <input type="range" id="imgRatio" min="10" max="90" value="50">
+    <div style="display:flex;gap:4px;align-items:center;">
+      <input type="range" id="imgRatio" min="10" max="90" value="50" style="flex:1;">
+      <input type="number" id="imgRatio_num" min="10" max="90" value="50" style="width:52px;padding:5px 4px;border:2px solid var(--ink);border-radius:8px;font-size:11px;font-family:inherit;text-align:center;">
+    </div>
   </div>
 
-  <h2>文字內容</h2>
-  <label>主標題</label>
-  <input type="text" id="titleText" value="Fuji F601">
-  <label>副標題（僅置中款使用）</label>
-  <input type="text" id="subText" value="夏日清涼特輯">
-  <div class="toggle-row"><span>角標 Badge（兩行小標）</span><input type="checkbox" id="badgeOn" checked></div>
-  <input type="text" id="badgeLine1" placeholder="第一行" value="FLASH">
-  <input type="text" id="badgeLine2" placeholder="第二行（可留空）" value="FILTER" style="margin-top:4px;">
+  <div class="grp" id="imgPosPanel"></div>
 
   <label class="upload-btn" for="fontInput">＋ 上傳自訂字體 (.ttf / .otf / .woff)，會加入下方各元件的字型選單</label>
   <input type="file" id="fontInput" accept=".ttf,.otf,.woff,.woff2">
@@ -134,16 +158,28 @@
 <div class="stage">
   <div class="stage-col">
     <div class="size-label" id="sizeLabel">1280 × 720 px（滿版輸出，無外框）</div>
-    <div class="canvas-wrap"><canvas id="cv"></canvas></div>
-    <button class="dl" id="downloadBtn">下載 PNG</button>
-    <div class="grp" style="width:340px;">
-      <label>批量製作（每行一張卡，格式：主標題||副標題||圖片編號，副標題與圖片編號可省略。圖片編號對應上方縮圖左下角的數字）</label>
-      <textarea id="batchText" rows="4" style="resize:vertical;">GRX||||1
-Fuji||夏日限定||2
-Polaroid Classic|||3</textarea>
-      <button class="dl" id="batchBtn" style="width:100%;margin-top:8px;">📦 批量下載 ZIP</button>
-      <div class="hint" id="batchStatus"></div>
+    <div class="guide-toggles">
+      <label class="guide-toggle"><input type="checkbox" id="guideToggle"> 顯示置中參考線</label>
+      <label class="guide-toggle"><input type="checkbox" id="gridToggle"> 顯示網格參考</label>
     </div>
+    <div class="canvas-wrap">
+      <div class="canvas-stage">
+        <canvas id="cv"></canvas>
+        <div class="center-guide" id="centerGuide">
+          <div class="grid"></div>
+          <div class="marks">
+            <i class="v-third" style="left:33.333%;"></i>
+            <i class="v-third" style="left:66.666%;"></i>
+            <i class="h-third" style="top:33.333%;"></i>
+            <i class="h-third" style="top:66.666%;"></i>
+            <i class="v-mid"></i>
+            <i class="h-mid"></i>
+            <i class="dot"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="dl" id="downloadBtn">下載 PNG</button>
   </div>
   <div class="stage-col">
     <div class="phone-label">手機首頁預覽（1440×3200・参考 首页-KR）</div>
@@ -153,8 +189,7 @@ Polaroid Classic|||3</textarea>
         <div class="ph-status"><span>9:41</span><span>●●●</span></div>
         <div class="ph-icons"><div class="ic"></div><div class="ic"></div><div class="ic"></div><div class="ic"></div></div>
         <div class="ph-banner"></div>
-        <div class="ph-section-title">지금 인기</div>
-        <div class="ph-row" id="phRow"></div>
+        <div class="ph-sections" id="phSections"></div>
       </div>
     </div>
   </div>
@@ -178,9 +213,9 @@ const FONT_OPTIONS = [
   {value:"'Anton',sans-serif", label:'Anton'},
 ];
 
-function newTextStyle(size,weight){
+function newTextStyle(size,weight,text){
   return {
-    font:FONT_OPTIONS[0].value, size, color:'#ffffff', weight, offsetX:0, offsetY:0,
+    text: text||'', font:FONT_OPTIONS[0].value, size, color:'#ffffff', weight, offsetX:0, offsetY:0,
     letterSpacing:0, lineHeight:1.4,
     outlineOn:false, outlineColor:'#000000', outlineWidth:3,
     shadowOn:true, shadowColor:'#000000', shadowBlur:8,
@@ -188,10 +223,10 @@ function newTextStyle(size,weight){
   };
 }
 let styles = {
-  title:    newTextStyle(37,700),
-  subtitle: newTextStyle(16,500),
-  badge:    newTextStyle(16,400),
-  line:     { color:'#ffffff', width:3, dash:false, offsetX:0, offsetY:0, iconOpacity:100, iconSize:1, tintOn:false,
+  title:    newTextStyle(37,700,'Fuji F601'),
+  subtitle: newTextStyle(16,500,'夏日清涼特輯'),
+  badge:    Object.assign(newTextStyle(16,400,''), {on:true, line1:'FLASH', line2:'FILTER'}),
+  line:     { color:'#ffffff', width:3, dash:false, offsetX:0, offsetY:0, iconOpacity:100, iconSize:1, tintOn:false, useSvgIcon:false,
     shapeOn:false, shapeType:'rect', shapeColor:'#111111', shapeOpacity:100, shapeW:80, shapeH:80, shapeRadius:0, shapeOffsetX:0, shapeOffsetY:0 }
 };
 const COMPONENTS = [
@@ -200,19 +235,40 @@ const COMPONENTS = [
   {key:'badge', label:'角標'},
   {key:'line', label:'線條/圖示'}
 ];
+// which components each of the 4 Figma layouts actually uses (title & line are always usable —
+// line covers the generic color-block shape which any layout can show)
+const LAYOUT_COMPONENTS = [
+  ['title','badge','line'],   // card1 — 標籤款＋圖示
+  ['title','line'],           // card2 — 置中標題款
+  ['title','badge','line'],   // card3 — 標籤款
+  ['title','subtitle','line'] // card4 — 置中標題＋副標款
+];
 let activeComp = 'title';
 
 let state = {
   sizeIdx:0, layoutIdx:0,
   images:[], selected:[],
   imgMode:'single', imgRatio:0.5,
+  imgOffsetX:0, imgOffsetY:0, imgScale:1,
   svgIcon:null,
 };
 
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
-const phoneScreenEl = document.querySelector('.phone-screen');
-const PHONE_REAL_W = 1440, PHONE_REAL_H = 3200;
+let cards = [];
+let groupNames = {}; // sizeIdx -> custom group label
+let activeCardIdx = 0;
+const MAX_CARDS = 10;
+
+function updateGuideVisibility(){
+  const guideOn = document.getElementById('guideToggle').checked;
+  const gridOn = document.getElementById('gridToggle').checked;
+  const el = document.getElementById('centerGuide');
+  el.classList.toggle('show-center', guideOn);
+  el.classList.toggle('show-grid', gridOn);
+}
+document.getElementById('guideToggle').addEventListener('change', updateGuideVisibility);
+document.getElementById('gridToggle').addEventListener('change', updateGuideVisibility);
 
 // ---------- size chips ----------
 const sizeRow = document.getElementById('sizeRow');
@@ -220,13 +276,32 @@ SIZES.forEach((s,i)=>{
   const c = document.createElement('div');
   c.className = 'chip' + (i===0?' active':'');
   c.textContent = s.label;
-  c.onclick = ()=>{ state.sizeIdx=i; refreshChips(); render(); };
+  c.onclick = ()=> changeActiveCardSize(i);
   sizeRow.appendChild(c);
 });
+// changing the working size effectively moves the current card into a different group.
+// if this card is the ONLY member of its current group, that group would vanish — so we
+// duplicate it first to preserve the old group, then apply the new size to the duplicate.
+function changeActiveCardSize(newSizeIdx){
+  if(newSizeIdx === state.sizeIdx) return;
+  if(cards.length){
+    cards[activeCardIdx] = snapshotState();
+    const soleInGroup = cards.filter(c=>c.sizeIdx===state.sizeIdx).length <= 1;
+    if(soleInGroup && cards.length < MAX_CARDS){
+      const clone = JSON.parse(JSON.stringify(cards[activeCardIdx]));
+      cards.splice(activeCardIdx, 0, clone);
+      activeCardIdx = activeCardIdx + 1;
+    }
+  }
+  state.sizeIdx = newSizeIdx;
+  refreshChips();
+  render();
+}
 function refreshChips(){
   [...sizeRow.children].forEach((c,i)=>c.classList.toggle('active', i===state.sizeIdx));
   [...layoutRow.children].forEach((c,i)=>c.classList.toggle('active', i===state.layoutIdx));
   document.getElementById('sizeLabel').textContent = SIZES[state.sizeIdx].label + ' px（滿版輸出，無外框）';
+  if(typeof updateCompTabsAvailability === 'function') updateCompTabsAvailability();
 }
 
 // ---------- layout thumbs ----------
@@ -245,7 +320,6 @@ LAYOUT_NAMES.forEach((name,i)=>{
   d.onclick = ()=>{ state.layoutIdx=i; refreshChips(); render(); };
   layoutRow.appendChild(d);
 });
-refreshChips();
 
 // ---------- image upload & selection ----------
 const fileInput = document.getElementById('fileInput');
@@ -268,6 +342,9 @@ function renderThumbs(){
     t.src = img.src;
     wrap.appendChild(t);
     const idxB = document.createElement('div'); idxB.className='idx-num'; idxB.textContent=idx+1; wrap.appendChild(idxB);
+    const delB = document.createElement('div'); delB.className='del-btn'; delB.textContent='✕';
+    delB.onclick = (e)=>{ e.stopPropagation(); deleteImage(idx); };
+    wrap.appendChild(delB);
     if(selPos>-1){ const b=document.createElement('div'); b.className='badge-num'; b.textContent=selPos+1; wrap.appendChild(b); }
     wrap.onclick = ()=>{
       const pos = state.selected.indexOf(idx);
@@ -280,6 +357,14 @@ function renderThumbs(){
     };
     thumbsDiv.appendChild(wrap);
   });
+}
+function deleteImage(idx){
+  if(!confirm('刪除這張圖片？所有卡片配置中用到這張圖的地方也會一併移除。')) return;
+  state.images.splice(idx,1);
+  const remap = arr => (arr||[]).filter(i=>i!==idx).map(i=> i>idx ? i-1 : i);
+  state.selected = remap(state.selected);
+  cards.forEach(c=>{ c.selected = remap(c.selected); });
+  renderThumbs(); render();
 }
 fileInput.addEventListener('change', e=>{
   [...e.target.files].forEach(f=>{
@@ -300,7 +385,24 @@ imgModeSel.addEventListener('change', ()=>{
   if(state.selected.length > maxSelectable()) state.selected = state.selected.slice(0,maxSelectable());
   renderThumbs(); render();
 });
-imgRatioInput.addEventListener('input', ()=>{ state.imgRatio = +imgRatioInput.value/100; render(); });
+imgRatioInput.addEventListener('input', ()=>{ document.getElementById('imgRatio_num').value = imgRatioInput.value; state.imgRatio = +imgRatioInput.value/100; render(); });
+document.getElementById('imgRatio_num').addEventListener('input', (e)=>{ if(e.target.value==='') return; imgRatioInput.value = e.target.value; state.imgRatio = +e.target.value/100; render(); });
+
+function buildImgPosPanel(){
+  const panel = document.getElementById('imgPosPanel');
+  panel.innerHTML = `
+    <h3>模特圖位置</h3>
+    <div class="two-col">
+      ${rangeNumHTML('imgOffsetX','水平位置',-50,50,state.imgOffsetX)}
+      ${rangeNumHTML('imgOffsetY','垂直位置',-50,50,state.imgOffsetY)}
+    </div>
+    ${rangeNumHTML('imgScale','縮放（%）',50,300,Math.round(state.imgScale*100))}
+  `;
+  wireRangeNum('imgOffsetX', v=>{ state.imgOffsetX=v; render(); });
+  wireRangeNum('imgOffsetY', v=>{ state.imgOffsetY=v; render(); });
+  wireRangeNum('imgScale', v=>{ state.imgScale=v/100; render(); });
+}
+buildImgPosPanel();
 
 function selectedImages(){ return state.selected.map(i=>state.images[i]).filter(Boolean); }
 
@@ -347,8 +449,7 @@ fontInput.addEventListener('change', e=>{
 });
 
 // ---------- content inputs ----------
-const contentIds = ['titleText','subText','badgeOn','badgeLine1','badgeLine2'];
-contentIds.forEach(id=>{ document.getElementById(id).addEventListener('input', render); });
+// content (title/subtitle/badge text) now lives inside styles and is wired up per-component in buildCompPanel()
 
 // ---------- per-component style panel ----------
 const compTabs = document.getElementById('compTabs');
@@ -356,10 +457,26 @@ const compPanel = document.getElementById('compPanel');
 COMPONENTS.forEach(c=>{
   const t = document.createElement('div');
   t.className = 'comp-tab' + (c.key===activeComp?' active':'');
+  t.dataset.key = c.key;
   t.textContent = c.label;
-  t.onclick = ()=>{ activeComp=c.key; [...compTabs.children].forEach(x=>x.classList.remove('active')); t.classList.add('active'); buildCompPanel(); };
+  t.onclick = ()=>{
+    if(!LAYOUT_COMPONENTS[state.layoutIdx].includes(c.key)) return;
+    activeComp=c.key; [...compTabs.children].forEach(x=>x.classList.remove('active')); t.classList.add('active'); buildCompPanel();
+  };
   compTabs.appendChild(t);
 });
+function updateCompTabsAvailability(){
+  const used = LAYOUT_COMPONENTS[state.layoutIdx];
+  [...compTabs.children].forEach(t=>{
+    const usable = used.includes(t.dataset.key);
+    t.classList.toggle('comp-tab-disabled', !usable);
+  });
+  if(!used.includes(activeComp)){
+    activeComp = 'title';
+    [...compTabs.children].forEach(t=>t.classList.toggle('active', t.dataset.key==='title'));
+    buildCompPanel();
+  }
+}
 function fontOptionsHTML(selected){
   return FONT_OPTIONS.map(f=>`<option value="${f.value}" ${f.value===selected?'selected':''}>${f.label}</option>`).join('');
 }
@@ -370,23 +487,23 @@ function buildCompPanel(){
       <h3>線條樣式</h3>
       <div class="two-col">
         <div><label>顏色</label><input type="color" id="l_color" value="${s.color}"></div>
-        <div><label>粗細</label><input type="range" id="l_width" min="1" max="20" value="${s.width}"></div>
+        ${rangeNumHTML('l_width','粗細',1,20,s.width)}
       </div>
       <div class="toggle-row"><span>虛線</span><input type="checkbox" id="l_dash" ${s.dash?'checked':''}></div>
       <div class="two-col">
-        <div><label>水平位移</label><input type="range" id="l_offx" min="-300" max="300" value="${s.offsetX}"></div>
-        <div><label>垂直位移</label><input type="range" id="l_offy" min="-300" max="300" value="${s.offsetY}"></div>
+        ${rangeNumHTML('l_offx','水平位移',-300,300,s.offsetX)}
+        ${rangeNumHTML('l_offy','垂直位移',-300,300,s.offsetY)}
       </div>
       <h3>SVG 圖示</h3>
       <label class="upload-btn" for="svgInput">＋ 匯入 / 更換 SVG 圖示</label>
       <input type="file" id="svgInput" accept=".svg,image/svg+xml">
       <div class="svg-preview" id="svgPreview" style="display:${state.svgIcon?'flex':'none'};">
         <img id="svgPreviewImg" src="${state.svgIcon?state.svgIcon.src:''}">
-        <div class="toggle-row" style="flex:1;margin:0;"><span>套用為裝飾圖示</span><input type="checkbox" id="useSvgIcon"></div>
+        <div class="toggle-row" style="flex:1;margin:0;"><span>套用為裝飾圖示</span><input type="checkbox" id="useSvgIcon" ${s.useSvgIcon?'checked':''}></div>
       </div>
       <div class="two-col">
-        <div><label>大小倍率</label><input type="range" id="l_iconSize" min="20" max="300" value="${s.iconSize*100}"></div>
-        <div><label>透明度</label><input type="range" id="l_iconOpacity" min="0" max="100" value="${s.iconOpacity}"></div>
+        ${rangeNumHTML('l_iconSize','大小倍率',20,300,s.iconSize*100)}
+        ${rangeNumHTML('l_iconOpacity','透明度',0,100,s.iconOpacity)}
       </div>
       <div class="toggle-row"><span>套用線條顏色（單色化）</span><input type="checkbox" id="l_tintOn" ${s.tintOn?'checked':''}></div>
       <h3>色塊形狀</h3>
@@ -400,37 +517,36 @@ function buildCompPanel(){
         </select>
         <div class="two-col">
           <div><label>顏色</label><input type="color" id="l_shapeColor" value="${s.shapeColor}"></div>
-          <div><label>透明度</label><input type="range" id="l_shapeOpacity" min="0" max="100" value="${s.shapeOpacity}"></div>
+          ${rangeNumHTML('l_shapeOpacity','透明度',0,100,s.shapeOpacity)}
         </div>
         <div class="two-col">
-          <div><label>寬度</label><input type="range" id="l_shapeW" min="4" max="600" value="${s.shapeW}"></div>
-          <div><label>高度</label><input type="range" id="l_shapeH" min="4" max="600" value="${s.shapeH}"></div>
+          ${rangeNumHTML('l_shapeW','寬度',4,2500,s.shapeW)}
+          ${rangeNumHTML('l_shapeH','高度',4,2500,s.shapeH)}
         </div>
-        <label>圓角</label>
-        <input type="range" id="l_shapeRadius" min="0" max="300" value="${s.shapeRadius}">
+        ${rangeNumHTML('l_shapeRadius','圓角',0,1250,s.shapeRadius)}
         <div class="two-col">
-          <div><label>水平位置</label><input type="range" id="l_shapeOffX" min="-600" max="600" value="${s.shapeOffsetX}"></div>
-          <div><label>垂直位置</label><input type="range" id="l_shapeOffY" min="-600" max="600" value="${s.shapeOffsetY}"></div>
+          ${rangeNumHTML('l_shapeOffX','水平位置',-1500,1500,s.shapeOffsetX)}
+          ${rangeNumHTML('l_shapeOffY','垂直位置',-1500,1500,s.shapeOffsetY)}
         </div>
       </div>
     `;
     document.getElementById('l_color').oninput = e=>{ s.color=e.target.value; render(); };
-    document.getElementById('l_width').oninput = e=>{ s.width=+e.target.value; render(); };
+    wireRangeNum('l_width', v=>{ s.width=v; render(); });
     document.getElementById('l_dash').onchange = e=>{ s.dash=e.target.checked; render(); };
-    document.getElementById('l_offx').oninput = e=>{ s.offsetX=+e.target.value; render(); };
-    document.getElementById('l_offy').oninput = e=>{ s.offsetY=+e.target.value; render(); };
-    document.getElementById('l_iconSize').oninput = e=>{ s.iconSize=+e.target.value/100; render(); };
-    document.getElementById('l_iconOpacity').oninput = e=>{ s.iconOpacity=+e.target.value; render(); };
+    wireRangeNum('l_offx', v=>{ s.offsetX=v; render(); });
+    wireRangeNum('l_offy', v=>{ s.offsetY=v; render(); });
+    wireRangeNum('l_iconSize', v=>{ s.iconSize=v/100; render(); });
+    wireRangeNum('l_iconOpacity', v=>{ s.iconOpacity=v; render(); });
     document.getElementById('l_tintOn').onchange = e=>{ s.tintOn=e.target.checked; render(); };
     document.getElementById('l_shapeOn').onchange = e=>{ s.shapeOn=e.target.checked; render(); };
     document.getElementById('l_shapeType').onchange = e=>{ s.shapeType=e.target.value; render(); };
     document.getElementById('l_shapeColor').oninput = e=>{ s.shapeColor=e.target.value; render(); };
-    document.getElementById('l_shapeOpacity').oninput = e=>{ s.shapeOpacity=+e.target.value; render(); };
-    document.getElementById('l_shapeW').oninput = e=>{ s.shapeW=+e.target.value; render(); };
-    document.getElementById('l_shapeH').oninput = e=>{ s.shapeH=+e.target.value; render(); };
-    document.getElementById('l_shapeRadius').oninput = e=>{ s.shapeRadius=+e.target.value; render(); };
-    document.getElementById('l_shapeOffX').oninput = e=>{ s.shapeOffsetX=+e.target.value; render(); };
-    document.getElementById('l_shapeOffY').oninput = e=>{ s.shapeOffsetY=+e.target.value; render(); };
+    wireRangeNum('l_shapeOpacity', v=>{ s.shapeOpacity=v; render(); });
+    wireRangeNum('l_shapeW', v=>{ s.shapeW=v; render(); });
+    wireRangeNum('l_shapeH', v=>{ s.shapeH=v; render(); });
+    wireRangeNum('l_shapeRadius', v=>{ s.shapeRadius=v; render(); });
+    wireRangeNum('l_shapeOffX', v=>{ s.shapeOffsetX=v; render(); });
+    wireRangeNum('l_shapeOffY', v=>{ s.shapeOffsetY=v; render(); });
     document.getElementById('svgInput').addEventListener('change', e=>{
       const f = e.target.files[0]; if(!f) return;
       const url = URL.createObjectURL(f);
@@ -439,15 +555,23 @@ function buildCompPanel(){
       img.src = url;
     });
     const useSvg = document.getElementById('useSvgIcon');
-    if(useSvg) useSvg.onchange = render;
+    if(useSvg) useSvg.onchange = e=>{ s.useSvgIcon=e.target.checked; render(); };
     return;
   }
   compPanel.innerHTML = `
-    <h3>文字</h3>
+    <h3>文字內容</h3>
+    ${activeComp==='badge' ? `
+      <div class="toggle-row"><span>顯示角標</span><input type="checkbox" id="c_badgeOn" ${s.on?'checked':''}></div>
+      <input type="text" id="c_line1" placeholder="第一行" value="${(s.line1||'').replace(/"/g,'&quot;')}">
+      <input type="text" id="c_line2" placeholder="第二行（可留空）" value="${(s.line2||'').replace(/"/g,'&quot;')}" style="margin-top:4px;">
+    ` : `
+      <input type="text" id="c_text" value="${(s.text||'').replace(/"/g,'&quot;')}">
+    `}
+    <h3>字型</h3>
     <label>字型</label>
     <select id="c_font">${fontOptionsHTML(s.font)}</select>
     <div class="two-col">
-      <div><label>字級</label><input type="range" id="c_size" min="8" max="140" value="${s.size}"></div>
+      ${rangeNumHTML('c_size','字級',8,140,s.size)}
       <div><label>顏色</label><input type="color" id="c_color" value="${s.color}"></div>
     </div>
     <label>字重</label>
@@ -459,61 +583,68 @@ function buildCompPanel(){
       <option value="900" ${s.weight==900?'selected':''}>Black</option>
     </select>
     <div class="two-col">
-      <div><label>水平位移</label><input type="range" id="c_offx" min="-300" max="300" value="${s.offsetX}"></div>
-      <div><label>垂直位移</label><input type="range" id="c_offy" min="-300" max="300" value="${s.offsetY}"></div>
+      ${rangeNumHTML('c_offx','水平位移',-300,300,s.offsetX)}
+      ${rangeNumHTML('c_offy','垂直位移',-300,300,s.offsetY)}
     </div>
     <div class="two-col">
-      <div><label>字距 Letter-spacing</label><input type="range" id="c_letterSpacing" min="-10" max="40" value="${s.letterSpacing}"></div>
-      <div><label>行距 Line-height</label><input type="range" id="c_lineHeight" min="0.8" max="3" step="0.05" value="${s.lineHeight}"></div>
+      ${rangeNumHTML('c_letterSpacing','字距 Letter-spacing',-10,40,s.letterSpacing)}
+      ${rangeNumHTML('c_lineHeight','行距 Line-height',0.8,3,s.lineHeight,0.05)}
     </div>
     <div class="toggle-row"><span>外框 Outline</span><input type="checkbox" id="c_outlineOn" ${s.outlineOn?'checked':''}></div>
     <div class="two-col">
       <div><label>顏色</label><input type="color" id="c_outlineColor" value="${s.outlineColor}"></div>
-      <div><label>粗細</label><input type="range" id="c_outlineWidth" min="1" max="10" value="${s.outlineWidth}"></div>
+      ${rangeNumHTML('c_outlineWidth','粗細',1,10,s.outlineWidth)}
     </div>
     <div class="toggle-row"><span>陰影 Shadow</span><input type="checkbox" id="c_shadowOn" ${s.shadowOn?'checked':''}></div>
     <div class="two-col">
       <div><label>顏色</label><input type="color" id="c_shadowColor" value="${s.shadowColor}"></div>
-      <div><label>模糊</label><input type="range" id="c_shadowBlur" min="0" max="30" value="${s.shadowBlur}"></div>
+      ${rangeNumHTML('c_shadowBlur','模糊',0,30,s.shadowBlur)}
     </div>
     <h3>色塊背景</h3>
     <div class="subgrp">
       <div class="toggle-row"><span>顯示色塊</span><input type="checkbox" id="c_blockOn" ${s.blockOn?'checked':''}></div>
       <div class="two-col">
         <div><label>顏色</label><input type="color" id="c_blockColor" value="${s.blockColor}"></div>
-        <div><label>透明度</label><input type="range" id="c_blockOpacity" min="0" max="100" value="${s.blockOpacity}"></div>
+        ${rangeNumHTML('c_blockOpacity','透明度',0,100,s.blockOpacity)}
       </div>
       <div class="two-col">
-        <div><label>比例（padding）</label><input type="range" id="c_blockPadding" min="0" max="60" value="${s.blockPadding}"></div>
-        <div><label>圓角</label><input type="range" id="c_blockRadius" min="0" max="60" value="${s.blockRadius}"></div>
+        ${rangeNumHTML('c_blockPadding','比例（padding）',0,60,s.blockPadding)}
+        ${rangeNumHTML('c_blockRadius','圓角',0,60,s.blockRadius)}
       </div>
       <div class="two-col">
-        <div><label>色塊水平位移</label><input type="range" id="c_blockOffX" min="-100" max="100" value="${s.blockOffsetX}"></div>
-        <div><label>色塊垂直位移</label><input type="range" id="c_blockOffY" min="-100" max="100" value="${s.blockOffsetY}"></div>
+        ${rangeNumHTML('c_blockOffX','色塊水平位移',-100,100,s.blockOffsetX)}
+        ${rangeNumHTML('c_blockOffY','色塊垂直位移',-100,100,s.blockOffsetY)}
       </div>
     </div>
   `;
+  if(activeComp==='badge'){
+    document.getElementById('c_badgeOn').onchange = e=>{ s.on=e.target.checked; render(); };
+    document.getElementById('c_line1').oninput = e=>{ s.line1=e.target.value; render(); };
+    document.getElementById('c_line2').oninput = e=>{ s.line2=e.target.value; render(); };
+  } else {
+    document.getElementById('c_text').oninput = e=>{ s.text=e.target.value; render(); };
+  }
   document.getElementById('c_font').onchange = e=>{ s.font=e.target.value; render(); };
-  document.getElementById('c_size').oninput = e=>{ s.size=+e.target.value; render(); };
+  wireRangeNum('c_size', v=>{ s.size=v; render(); });
   document.getElementById('c_color').oninput = e=>{ s.color=e.target.value; render(); };
   document.getElementById('c_weight').onchange = e=>{ s.weight=+e.target.value; render(); };
-  document.getElementById('c_offx').oninput = e=>{ s.offsetX=+e.target.value; render(); };
-  document.getElementById('c_offy').oninput = e=>{ s.offsetY=+e.target.value; render(); };
-  document.getElementById('c_letterSpacing').oninput = e=>{ s.letterSpacing=+e.target.value; render(); };
-  document.getElementById('c_lineHeight').oninput = e=>{ s.lineHeight=+e.target.value; render(); };
+  wireRangeNum('c_offx', v=>{ s.offsetX=v; render(); });
+  wireRangeNum('c_offy', v=>{ s.offsetY=v; render(); });
+  wireRangeNum('c_letterSpacing', v=>{ s.letterSpacing=v; render(); });
+  wireRangeNum('c_lineHeight', v=>{ s.lineHeight=v; render(); });
   document.getElementById('c_outlineOn').onchange = e=>{ s.outlineOn=e.target.checked; render(); };
   document.getElementById('c_outlineColor').oninput = e=>{ s.outlineColor=e.target.value; render(); };
-  document.getElementById('c_outlineWidth').oninput = e=>{ s.outlineWidth=+e.target.value; render(); };
+  wireRangeNum('c_outlineWidth', v=>{ s.outlineWidth=v; render(); });
   document.getElementById('c_shadowOn').onchange = e=>{ s.shadowOn=e.target.checked; render(); };
   document.getElementById('c_shadowColor').oninput = e=>{ s.shadowColor=e.target.value; render(); };
-  document.getElementById('c_shadowBlur').oninput = e=>{ s.shadowBlur=+e.target.value; render(); };
+  wireRangeNum('c_shadowBlur', v=>{ s.shadowBlur=v; render(); });
   document.getElementById('c_blockOn').onchange = e=>{ s.blockOn=e.target.checked; render(); };
   document.getElementById('c_blockColor').oninput = e=>{ s.blockColor=e.target.value; render(); };
-  document.getElementById('c_blockOpacity').oninput = e=>{ s.blockOpacity=+e.target.value; render(); };
-  document.getElementById('c_blockPadding').oninput = e=>{ s.blockPadding=+e.target.value; render(); };
-  document.getElementById('c_blockRadius').oninput = e=>{ s.blockRadius=+e.target.value; render(); };
-  document.getElementById('c_blockOffX').oninput = e=>{ s.blockOffsetX=+e.target.value; render(); };
-  document.getElementById('c_blockOffY').oninput = e=>{ s.blockOffsetY=+e.target.value; render(); };
+  wireRangeNum('c_blockOpacity', v=>{ s.blockOpacity=v; render(); });
+  wireRangeNum('c_blockPadding', v=>{ s.blockPadding=v; render(); });
+  wireRangeNum('c_blockRadius', v=>{ s.blockRadius=v; render(); });
+  wireRangeNum('c_blockOffX', v=>{ s.blockOffsetX=v; render(); });
+  wireRangeNum('c_blockOffY', v=>{ s.blockOffsetY=v; render(); });
 }
 buildCompPanel();
 
@@ -523,6 +654,16 @@ function drawImageCover(img,x,y,w,h){
   let sx,sy,sw,sh;
   if(ir > tr){ sh=img.height; sw=sh*tr; sx=(img.width-sw)/2; sy=0; }
   else{ sw=img.width; sh=sw/tr; sx=0; sy=(img.height-sh)/2; }
+  const scale = state.imgScale || 1;
+  if(scale !== 1){
+    const nsw = Math.min(img.width, sw/scale), nsh = Math.min(img.height, sh/scale);
+    sx += (sw-nsw)/2; sy += (sh-nsh)/2;
+    sw = nsw; sh = nsh;
+  }
+  const offX = (state.imgOffsetX||0)/100 * sw;
+  const offY = (state.imgOffsetY||0)/100 * sh;
+  sx = Math.max(0, Math.min(img.width-sw, sx+offX));
+  sy = Math.max(0, Math.min(img.height-sh, sy+offY));
   ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
 }
 function roundRectPath(x,y,w,h,r){
@@ -533,6 +674,16 @@ function roundRectPath(x,y,w,h,r){
 }
 function gv(id){ return document.getElementById(id).value; }
 function gc(id){ return document.getElementById(id).checked; }
+function rangeNumHTML(id,label,min,max,value,step){
+  step = step||1;
+  return `<div><label>${label}</label><div style="display:flex;gap:4px;align-items:center;"><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${value}" style="flex:1;"><input type="number" id="${id}_num" value="${value}" step="${step}" style="width:52px;padding:5px 4px;border:2px solid var(--ink);border-radius:8px;font-size:11px;font-family:inherit;text-align:center;"></div></div>`;
+}
+function wireRangeNum(id,cb){
+  const r = document.getElementById(id), n = document.getElementById(id+'_num');
+  if(!r||!n) return;
+  r.oninput = ()=>{ n.value=r.value; cb(+r.value); };
+  n.oninput = ()=>{ if(n.value==='' || n.value==='-') return; let v=+n.value; if(isNaN(v)) return; r.value=v; cb(v); };
+}
 
 function drawTextBlock(c,text,x,y,align){
   if(!c.blockOn) return;
@@ -596,9 +747,9 @@ function styledText(compKey,text,x,y,align){
 
 function collectGlobal(){
   return {
-    title: gv('titleText'), sub: gv('subText'),
-    badgeOn: gc('badgeOn'), badgeLine1: gv('badgeLine1'), badgeLine2: gv('badgeLine2'),
-    useSvgIcon: (document.getElementById('useSvgIcon')?document.getElementById('useSvgIcon').checked:false) && !!state.svgIcon
+    title: styles.title.text, sub: styles.subtitle.text,
+    badgeOn: styles.badge.on, badgeLine1: styles.badge.line1, badgeLine2: styles.badge.line2,
+    useSvgIcon: styles.line.useSvgIcon && !!state.svgIcon
   };
 }
 
@@ -708,33 +859,108 @@ function layoutCard4(g,W,H){
 const LAYOUTS = [layoutCard1, layoutCard2, layoutCard3, layoutCard4];
 
 // ---------- main render (always full-bleed export, no border/clip) ----------
-function buildPhoneRow(){
-  const sz = SIZES[state.sizeIdx];
+function feedRowSpec(sz){
   const ar = sz.w/sz.h;
-  const phRow = document.getElementById('phRow');
-  phRow.innerHTML = '';
-  let count, slotAR, captions;
-  if(ar >= 1.3){ count = 1; slotAR = ar; captions=[]; }
-  else if(Math.abs(ar-1) < 0.05){ count = 4; slotAR = 1; captions=['Sunset','Flash','Sunset']; }
-  else { count = 3; slotAR = ar; captions=['Flash','Sunset']; }
-  for(let i=0;i<count;i++){
+  if(ar >= 1.3) return { count:1, slotAR:ar, captions:[] };
+  if(Math.abs(ar-1) < 0.05) return { count:4, slotAR:1, captions:['Sunset','Flash','Sunset'] };
+  return { count:3, slotAR:ar, captions:['Flash','Sunset'] };
+}
+function buildGroupOrder(){
+  const order = [];
+  cards.forEach(c=>{ if(!order.includes(c.sizeIdx)) order.push(c.sizeIdx); });
+  return order;
+}
+function groupLabel(szIdx,letter){
+  return groupNames[szIdx] || `${letter}組 · ${SIZES[szIdx].label}`;
+}
+function buildSizeGroupRowEl(szIdx, groupItems){
+  // groupItems: array of {cardSnap, i}, all sharing the same size — laid out side by side, scrollable
+  const spec = feedRowSpec(SIZES[szIdx]);
+  const row = document.createElement('div');
+  row.className = 'ph-row ph-row-scroll';
+  groupItems.forEach(({cardSnap,i})=>{
+    let dataUrl;
+    if(i===activeCardIdx){ dataUrl = cv.toDataURL('image/png'); }
+    else { dataUrl = captureCardImage(cardSnap).dataUrl; }
     const slot = document.createElement('div');
-    slot.className = 'ph-slot' + (i===0?' live':'');
-    const widthPct = count===1 ? 92 : (100 - (count-1)*2)/count;
+    slot.className = 'ph-slot' + (i===activeCardIdx?' live':'');
+    const widthPct = spec.count===1 ? 92 : (100 - (spec.count-1)*2)/spec.count;
     slot.style.flex = `0 0 ${widthPct}%`;
-    slot.style.aspectRatio = slotAR;
-    if(i===0){
-      const img = document.createElement('img');
-      img.id = 'phonePreviewImg';
-      slot.appendChild(img);
-    } else {
-      const cap = document.createElement('div');
-      cap.className='cap';
-      cap.textContent = captions[i-1] || '';
-      slot.appendChild(cap);
-    }
-    phRow.appendChild(slot);
-  }
+    slot.style.aspectRatio = spec.slotAR;
+    const img = document.createElement('img');
+    img.src = dataUrl;
+    slot.appendChild(img);
+    row.appendChild(slot);
+  });
+  return row;
+}
+// renders a (non-active) card's config to the shared canvas, captures a PNG, then leaves the
+// canvas as-is (caller is responsible for restoring the active card's render afterward)
+function captureCardImage(cardSnap){
+  const savedStyles = styles;
+  const savedLayoutIdx = state.layoutIdx, savedSizeIdx = state.sizeIdx;
+  const savedImgMode = state.imgMode, savedImgRatio = state.imgRatio, savedSelected = state.selected;
+  const savedOffX = state.imgOffsetX, savedOffY = state.imgOffsetY, savedScale = state.imgScale;
+  styles = JSON.parse(JSON.stringify(cardSnap.styles));
+  state.layoutIdx = cardSnap.layoutIdx; state.sizeIdx = cardSnap.sizeIdx;
+  state.imgMode = cardSnap.imgMode; state.imgRatio = cardSnap.imgRatio;
+  state.imgOffsetX = cardSnap.imgOffsetX||0; state.imgOffsetY = cardSnap.imgOffsetY||0; state.imgScale = cardSnap.imgScale||1;
+  state.selected = (cardSnap.selected||[]).filter(i=>i<state.images.length);
+  const sz = SIZES[state.sizeIdx];
+  cv.width = sz.w; cv.height = sz.h;
+  const g = { title: styles.title.text, sub: styles.subtitle.text, badgeOn: styles.badge.on, badgeLine1: styles.badge.line1, badgeLine2: styles.badge.line2, useSvgIcon: styles.line.useSvgIcon && !!state.svgIcon };
+  ctx.clearRect(0,0,sz.w,sz.h);
+  LAYOUTS[state.layoutIdx](g,sz.w,sz.h);
+  const dataUrl = cv.toDataURL('image/png');
+  styles = savedStyles;
+  state.layoutIdx = savedLayoutIdx; state.sizeIdx = savedSizeIdx;
+  state.imgMode = savedImgMode; state.imgRatio = savedImgRatio; state.selected = savedSelected;
+  state.imgOffsetX = savedOffX; state.imgOffsetY = savedOffY; state.imgScale = savedScale;
+  return { dataUrl, sz };
+}
+function refreshPhonePreview(){
+  const wrap = document.getElementById('phSections');
+  wrap.innerHTML = '';
+  const groupOrder = buildGroupOrder();
+  const letters = 'ABCDEFGHIJ';
+  groupOrder.forEach((szIdx,gi)=>{
+    const groupItems = cards.map((cardSnap,i)=>({cardSnap,i})).filter(o=>o.cardSnap.sizeIdx===szIdx);
+    const section = document.createElement('div');
+    section.className = 'ph-section' + (groupItems.some(o=>o.i===activeCardIdx)?' active-card':'');
+    const title = document.createElement('div');
+    title.className = 'ph-section-title';
+    title.textContent = groupLabel(szIdx, letters[gi]);
+    section.appendChild(title);
+    section.appendChild(buildSizeGroupRowEl(szIdx, groupItems));
+    wrap.appendChild(section);
+  });
+  // re-render the shared canvas back to the active card (captureCardImage may have overwritten it)
+  const szActive = SIZES[state.sizeIdx];
+  cv.width = szActive.w; cv.height = szActive.h;
+  ctx.clearRect(0,0,szActive.w,szActive.h);
+  LAYOUTS[state.layoutIdx](collectGlobal(),szActive.w,szActive.h);
+}
+
+function syncGroupStyles(sourceIdx){
+  const source = cards[sourceIdx];
+  if(!source) return;
+  cards.forEach((c,i)=>{
+    if(i===sourceIdx || c.sizeIdx!==source.sizeIdx) return;
+    const keepTitleText = c.styles.title.text;
+    const keepSubText = c.styles.subtitle.text;
+    const keepBadgeLine1 = c.styles.badge.line1;
+    const keepBadgeLine2 = c.styles.badge.line2;
+    const keepSelected = c.selected;
+    c.styles = JSON.parse(JSON.stringify(source.styles));
+    c.styles.title.text = keepTitleText;
+    c.styles.subtitle.text = keepSubText;
+    c.styles.badge.line1 = keepBadgeLine1;
+    c.styles.badge.line2 = keepBadgeLine2;
+    c.layoutIdx = source.layoutIdx;
+    c.imgMode = source.imgMode;
+    c.imgRatio = source.imgRatio;
+    c.selected = keepSelected;
+  });
 }
 
 function render(){
@@ -743,9 +969,12 @@ function render(){
   const g = collectGlobal();
   ctx.clearRect(0,0,sz.w,sz.h);
   LAYOUTS[state.layoutIdx](g,sz.w,sz.h);
-  buildPhoneRow();
-  const phoneImg = document.getElementById('phonePreviewImg');
-  phoneImg.src = cv.toDataURL('image/png');
+  if(cards.length){
+    cards[activeCardIdx] = snapshotState();
+    syncGroupStyles(activeCardIdx);
+    buildCardRow();
+  }
+  refreshPhonePreview();
 }
 
 document.getElementById('downloadBtn').onclick = ()=>{
@@ -756,95 +985,101 @@ document.getElementById('downloadBtn').onclick = ()=>{
   link.click();
 };
 
-// ---------- saved style presets (in-memory for this session) ----------
-let presets = [];
+// ---------- multi-card configuration list (max 10 cards, each a full snapshot) ----------
 function snapshotState(){
   return {
     styles: JSON.parse(JSON.stringify(styles)),
     layoutIdx: state.layoutIdx, sizeIdx: state.sizeIdx,
     imgMode: state.imgMode, imgRatio: state.imgRatio,
-    titleText: gv('titleText'), subText: gv('subText'),
-    badgeOn: gc('badgeOn'), badgeLine1: gv('badgeLine1'), badgeLine2: gv('badgeLine2'),
+    imgOffsetX: state.imgOffsetX, imgOffsetY: state.imgOffsetY, imgScale: state.imgScale,
+    selected: [...state.selected],
   };
 }
 function applySnapshot(snap){
   styles = JSON.parse(JSON.stringify(snap.styles));
   state.layoutIdx = snap.layoutIdx; state.sizeIdx = snap.sizeIdx;
   state.imgMode = snap.imgMode; state.imgRatio = snap.imgRatio;
-  document.getElementById('titleText').value = snap.titleText;
-  document.getElementById('subText').value = snap.subText;
-  document.getElementById('badgeOn').checked = snap.badgeOn;
-  document.getElementById('badgeLine1').value = snap.badgeLine1;
-  document.getElementById('badgeLine2').value = snap.badgeLine2;
+  state.imgOffsetX = snap.imgOffsetX||0; state.imgOffsetY = snap.imgOffsetY||0; state.imgScale = snap.imgScale||1;
+  if(snap.selected) state.selected = snap.selected.filter(i=>i<state.images.length);
   imgModeSel.value = state.imgMode;
   ratioWrap.style.display = state.imgMode==='single' ? 'none' : 'block';
   imgRatioInput.value = state.imgRatio*100;
+  document.getElementById('imgRatio_num').value = state.imgRatio*100;
   refreshChips();
+  renderThumbs();
   buildCompPanel();
+  buildImgPosPanel();
   render();
 }
-function renderPresetRow(){
-  const row = document.getElementById('presetRow');
-  row.innerHTML='';
-  presets.forEach((p,i)=>{
-    const chip = document.createElement('div');
-    chip.className='preset-chip';
-    const nameSpan = document.createElement('span'); nameSpan.textContent = p.name;
-    nameSpan.onclick = ()=> applySnapshot(p.data);
-    const xSpan = document.createElement('span'); xSpan.className='x'; xSpan.textContent='✕';
-    xSpan.onclick = (e)=>{ e.stopPropagation(); presets.splice(i,1); renderPresetRow(); };
-    chip.appendChild(nameSpan); chip.appendChild(xSpan);
-    row.appendChild(chip);
+function buildCardRow(){
+  const container = document.getElementById('cardRow');
+  container.innerHTML = '';
+  const letters = 'ABCDEFGHIJ';
+  const groupOrder = buildGroupOrder();
+  groupOrder.forEach((szIdx,gi)=>{
+    const groupWrap = document.createElement('div');
+    groupWrap.className = 'card-group';
+    const header = document.createElement('input');
+    header.type = 'text';
+    header.className = 'card-group-label-input';
+    header.value = groupLabel(szIdx, letters[gi]);
+    header.title = '點擊可自行輸入這組的名稱';
+    header.oninput = ()=>{ groupNames[szIdx] = header.value; refreshPhonePreview(); };
+    header.onblur = ()=>{ if(!header.value.trim()){ delete groupNames[szIdx]; header.value = groupLabel(szIdx, letters[gi]); refreshPhonePreview(); } };
+    groupWrap.appendChild(header);
+    const rowScroll = document.createElement('div');
+    rowScroll.className = 'card-row-scroll';
+    let n = 0;
+    cards.forEach((c,i)=>{
+      if(c.sizeIdx!==szIdx) return;
+      n++;
+      const chip = document.createElement('div');
+      chip.className = 'chip' + (i===activeCardIdx?' active':'');
+      chip.style.position = 'relative';
+      chip.textContent = `${letters[gi]}-${n}`;
+      chip.onclick = ()=> switchCard(i);
+      if(cards.length>1){
+        const x = document.createElement('span');
+        x.textContent = ' ✕'; x.style.opacity = '.7';
+        x.onclick = (e)=>{ e.stopPropagation(); deleteCard(i); };
+        chip.appendChild(x);
+      }
+      rowScroll.appendChild(chip);
+    });
+    groupWrap.appendChild(rowScroll);
+    container.appendChild(groupWrap);
   });
+  document.getElementById('dupCardBtn').style.opacity = cards.length>=MAX_CARDS ? '.4' : '1';
 }
-document.getElementById('savePresetBtn').onclick = ()=>{
-  const name = prompt('幫這個樣式命名：', `樣式 ${presets.length+1}`);
-  if(!name) return;
-  presets.push({name, data: snapshotState()});
-  renderPresetRow();
-};
-
-// ---------- batch production (zip export) ----------
-document.getElementById('batchBtn').onclick = async ()=>{
-  const status = document.getElementById('batchStatus');
-  if(typeof JSZip==='undefined'){ status.textContent='JSZip 載入失敗，請檢查網路連線後重新整理頁面'; return; }
-  const lines = document.getElementById('batchText').value.split('\n').map(l=>l.trim()).filter(Boolean);
-  if(lines.length===0){ status.textContent='請至少輸入一行'; return; }
-  const titleEl = document.getElementById('titleText'), subEl = document.getElementById('subText');
-  const origTitle = titleEl.value, origSub = subEl.value;
-  const origSelected = [...state.selected], origImgMode = state.imgMode;
-  const sz = SIZES[state.sizeIdx];
-  const zip = new JSZip();
-  for(let i=0;i<lines.length;i++){
-    status.textContent = `製作中... (${i+1}/${lines.length})`;
-    const parts = lines[i].split('||');
-    titleEl.value = (parts[0]||'').trim();
-    subEl.value = (parts[1]||'').trim();
-    const imgIdxStr = (parts[2]||'').trim();
-    if(imgIdxStr){
-      const n = parseInt(imgIdxStr,10);
-      if(n>=1 && n<=state.images.length){ state.imgMode='single'; state.selected=[n-1]; }
-    }
-    render();
-    await new Promise(r=>setTimeout(r,20));
-    const dataUrl = cv.toDataURL('image/png');
-    const base64 = dataUrl.split(',')[1];
-    const safeName = ((parts[0]||('card'+(i+1))).trim().replace(/[^a-zA-Z0-9\u4e00-\u9fff]+/g,'_').slice(0,30)) || ('card'+(i+1));
-    zip.file(`${String(i+1).padStart(2,'0')}_${safeName}_${sz.w}x${sz.h}.png`, base64, {base64:true});
-  }
-  titleEl.value = origTitle; subEl.value = origSub;
-  state.selected = origSelected; state.imgMode = origImgMode;
-  imgModeSel.value = state.imgMode;
-  ratioWrap.style.display = state.imgMode==='single' ? 'none' : 'block';
-  renderThumbs(); render();
-  status.textContent = '打包中...';
-  const blob = await zip.generateAsync({type:'blob'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='cards_batch.zip'; a.click();
-  status.textContent = `完成！已下載 ${lines.length} 張卡片的 ZIP，每張的文字與模特圖已依每行設定套用`;
+function switchCard(i){
+  if(i===activeCardIdx) return;
+  cards[activeCardIdx] = snapshotState();
+  activeCardIdx = i;
+  applySnapshot(cards[i]);
+  buildCardRow();
+}
+function deleteCard(i){
+  if(cards.length<=1) return;
+  cards.splice(i,1);
+  if(activeCardIdx>=cards.length) activeCardIdx = cards.length-1;
+  else if(i<activeCardIdx) activeCardIdx--;
+  applySnapshot(cards[activeCardIdx]);
+  buildCardRow();
+}
+document.getElementById('dupCardBtn').onclick = ()=>{
+  if(cards.length>=MAX_CARDS){ alert(`最多只能建立 ${MAX_CARDS} 組卡片配置`); return; }
+  cards[activeCardIdx] = snapshotState();
+  const clone = JSON.parse(JSON.stringify(cards[activeCardIdx]));
+  cards.splice(activeCardIdx+1,0,clone);
+  activeCardIdx = activeCardIdx+1;
+  applySnapshot(cards[activeCardIdx]);
+  buildCardRow();
 };
 
 document.fonts.ready.then(render);
+refreshChips();
+cards.push(snapshotState());
+buildCardRow();
 render();
 </script>
 </body>
