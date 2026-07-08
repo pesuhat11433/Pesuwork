@@ -117,6 +117,7 @@
   <h2>卡片配置（最多 10 組）</h2>
   <div id="cardRow"></div>
   <button class="upload-btn" id="dupCardBtn" style="border-style:solid;">➕ 複製目前卡片，新增下一張</button>
+  <button class="dl" id="savePreviewBtn" style="width:100%;margin-top:8px;">💾 儲存並更新首頁預覽</button>
 
   <h2>尺寸</h2>
   <div class="row" id="sizeRow"></div>
@@ -135,6 +136,7 @@
     <option value="single">單圖滿版</option>
     <option value="vertical">上下拼接</option>
     <option value="horizontal">左右拼接</option>
+    <option value="ba">BA 對比（Before/After）</option>
   </select>
   <div id="ratioWrap" style="display:none;">
     <label>拼接比例</label>
@@ -145,6 +147,7 @@
   </div>
 
   <div class="grp" id="imgPosPanel"></div>
+  <div class="grp" id="beforeImgPanel" style="display:none;"></div>
 
   <label class="upload-btn" for="fontInput">＋ 上傳自訂字體 (.ttf / .otf / .woff)，會加入下方各元件的字型選單</label>
   <input type="file" id="fontInput" accept=".ttf,.otf,.woff,.woff2">
@@ -202,7 +205,7 @@ const SIZES = [
   {w:360,h:480,label:'360×480'},
   {w:720,h:960,label:'720×960'},
 ];
-const LAYOUT_NAMES = ['標籤款＋圖示（card1）','置中標題款（card2）','標籤款（card3）','置中標題＋副標款（card4）'];
+const LAYOUT_NAMES = ['標籤款＋圖示（card1）','置中標題款（card2）','標籤款（card3）','置中標題＋副標款（card4）','大標題款（可搭配 BA 對比）'];
 
 const FONT_OPTIONS = [
   {value:"'Noto Sans TC',sans-serif", label:'Noto Sans TC'},
@@ -239,9 +242,10 @@ const COMPONENTS = [
 // line covers the generic color-block shape which any layout can show)
 const LAYOUT_COMPONENTS = [
   ['title','badge','line'],   // card1 — 標籤款＋圖示
-  ['title','line'],           // card2 — 置中標題款
+  ['title','badge','line'],   // card2 — 置中標題款（badge 也用於 BA 對比模式的 Before 標籤）
   ['title','badge','line'],   // card3 — 標籤款
-  ['title','subtitle','line'] // card4 — 置中標題＋副標款
+  ['title','subtitle','badge','line'], // card4 — 置中標題＋副標款
+  ['title','badge','line']    // card5 — Before/After 對比款
 ];
 let activeComp = 'title';
 
@@ -250,6 +254,7 @@ let state = {
   images:[], selected:[],
   imgMode:'single', imgRatio:0.5,
   imgOffsetX:0, imgOffsetY:0, imgScale:1,
+  beforeImgIndex:null, beforeOffsetX:0, beforeOffsetY:0, beforeScale:1,
   svgIcon:null,
 };
 
@@ -302,6 +307,8 @@ function refreshChips(){
   [...layoutRow.children].forEach((c,i)=>c.classList.toggle('active', i===state.layoutIdx));
   document.getElementById('sizeLabel').textContent = SIZES[state.sizeIdx].label + ' px（滿版輸出，無外框）';
   if(typeof updateCompTabsAvailability === 'function') updateCompTabsAvailability();
+  const beforePanel = document.getElementById('beforeImgPanel');
+  if(beforePanel) beforePanel.style.display = (state.imgMode==='ba') ? 'block' : 'none';
 }
 
 // ---------- layout thumbs ----------
@@ -310,7 +317,7 @@ const thumbSVGs = [
   `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#888"/><text x="8" y="20" font-size="9" fill="#fff" font-family="sans-serif">FLASH</text><text x="8" y="30" font-size="9" fill="#fff" font-family="sans-serif">FILTER</text><text x="8" y="88" font-size="15" fill="#fff" font-family="sans-serif">Aa</text><rect x="80" y="80" width="5" height="12" fill="#fff"/></svg>`,
   `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#888"/><text x="50" y="88" font-size="15" fill="#fff" font-family="sans-serif" text-anchor="middle">Aa</text></svg>`,
   `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#888"/><text x="8" y="20" font-size="9" fill="#fff" font-family="sans-serif">FLASH</text><text x="8" y="30" font-size="9" fill="#fff" font-family="sans-serif">FILTER</text><text x="8" y="88" font-size="15" fill="#fff" font-family="sans-serif">Aa</text></svg>`,
-  `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#888"/><text x="50" y="82" font-size="15" fill="#fff" font-family="sans-serif" text-anchor="middle">Aa</text><text x="50" y="92" font-size="7" fill="#fff" font-family="sans-serif" text-anchor="middle">subtitle</text></svg>`
+  `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#888"/><rect x="62" y="6" width="30" height="34" rx="4" fill="#666" stroke="#111" stroke-width="1"/><text x="65" y="16" font-size="7" fill="#fff" font-family="sans-serif">Before</text><text x="8" y="88" font-size="15" fill="#fff" font-family="sans-serif">Aa</text></svg>`
 ];
 LAYOUT_NAMES.forEach((name,i)=>{
   const d = document.createElement('div');
@@ -328,7 +335,7 @@ const imgModeSel = document.getElementById('imgMode');
 const ratioWrap = document.getElementById('ratioWrap');
 const imgRatioInput = document.getElementById('imgRatio');
 
-function maxSelectable(){ return state.imgMode==='single' ? 1 : 2; }
+function maxSelectable(){ return (state.imgMode==='vertical' || state.imgMode==='horizontal') ? 2 : 1; }
 
 function renderThumbs(){
   thumbsDiv.innerHTML='';
@@ -357,6 +364,7 @@ function renderThumbs(){
     };
     thumbsDiv.appendChild(wrap);
   });
+  if(typeof buildBeforeImgPanel === 'function') buildBeforeImgPanel();
 }
 function deleteImage(idx){
   if(!confirm('刪除這張圖片？所有卡片配置中用到這張圖的地方也會一併移除。')) return;
@@ -364,6 +372,9 @@ function deleteImage(idx){
   const remap = arr => (arr||[]).filter(i=>i!==idx).map(i=> i>idx ? i-1 : i);
   state.selected = remap(state.selected);
   cards.forEach(c=>{ c.selected = remap(c.selected); });
+  const remapSingle = (val)=> val==null ? null : (val===idx ? null : (val>idx ? val-1 : val));
+  state.beforeImgIndex = remapSingle(state.beforeImgIndex);
+  cards.forEach(c=>{ c.beforeImgIndex = remapSingle(c.beforeImgIndex); });
   renderThumbs(); render();
 }
 fileInput.addEventListener('change', e=>{
@@ -381,7 +392,9 @@ fileInput.addEventListener('change', e=>{
 });
 imgModeSel.addEventListener('change', ()=>{
   state.imgMode = imgModeSel.value;
-  ratioWrap.style.display = state.imgMode==='single' ? 'none' : 'block';
+  ratioWrap.style.display = (state.imgMode==='vertical' || state.imgMode==='horizontal') ? 'block' : 'none';
+  const beforePanel = document.getElementById('beforeImgPanel');
+  if(beforePanel) beforePanel.style.display = state.imgMode==='ba' ? 'block' : 'none';
   if(state.selected.length > maxSelectable()) state.selected = state.selected.slice(0,maxSelectable());
   renderThumbs(); render();
 });
@@ -396,18 +409,77 @@ function buildImgPosPanel(){
       ${rangeNumHTML('imgOffsetX','水平位置',-50,50,state.imgOffsetX)}
       ${rangeNumHTML('imgOffsetY','垂直位置',-50,50,state.imgOffsetY)}
     </div>
+    <button type="button" class="upload-btn" id="imgCenterBtn" style="margin-top:2px;padding:6px;">⌖ 置中（重設位置）</button>
     ${rangeNumHTML('imgScale','縮放（%）',50,300,Math.round(state.imgScale*100))}
   `;
   wireRangeNum('imgOffsetX', v=>{ state.imgOffsetX=v; render(); });
   wireRangeNum('imgOffsetY', v=>{ state.imgOffsetY=v; render(); });
   wireRangeNum('imgScale', v=>{ state.imgScale=v/100; render(); });
+  document.getElementById('imgCenterBtn').onclick = ()=>{
+    state.imgOffsetX=0; state.imgOffsetY=0;
+    document.getElementById('imgOffsetX').value=0; document.getElementById('imgOffsetX_num').value=0;
+    document.getElementById('imgOffsetY').value=0; document.getElementById('imgOffsetY_num').value=0;
+    render();
+  };
 }
 buildImgPosPanel();
+
+function buildBeforeImgPanel(){
+  const panel = document.getElementById('beforeImgPanel');
+  const options = state.images.map((img,idx)=>`<option value="${idx}" ${state.beforeImgIndex===idx?'selected':''}>圖片 ${idx+1}</option>`).join('');
+  panel.innerHTML = `
+    <h3>Before 圖片（左上角小圖）</h3>
+    <label>選擇 Before 圖片</label>
+    <select id="beforeImgSelect"><option value="">未選擇</option>${options}</select>
+    <div class="two-col" style="margin-top:8px;">
+      ${rangeNumHTML('beforeOffsetX','水平位置',-50,50,state.beforeOffsetX)}
+      ${rangeNumHTML('beforeOffsetY','垂直位置',-50,50,state.beforeOffsetY)}
+    </div>
+    <button type="button" class="upload-btn" id="beforeImgCenterBtn" style="margin-top:2px;padding:6px;">⌖ 置中（重設位置）</button>
+    ${rangeNumHTML('beforeScale','縮放（%）',50,300,Math.round(state.beforeScale*100))}
+  `;
+  document.getElementById('beforeImgSelect').onchange = e=>{
+    state.beforeImgIndex = e.target.value==='' ? null : +e.target.value;
+    render();
+  };
+  wireRangeNum('beforeOffsetX', v=>{ state.beforeOffsetX=v; render(); });
+  wireRangeNum('beforeOffsetY', v=>{ state.beforeOffsetY=v; render(); });
+  wireRangeNum('beforeScale', v=>{ state.beforeScale=v/100; render(); });
+  document.getElementById('beforeImgCenterBtn').onclick = ()=>{
+    state.beforeOffsetX=0; state.beforeOffsetY=0;
+    document.getElementById('beforeOffsetX').value=0; document.getElementById('beforeOffsetX_num').value=0;
+    document.getElementById('beforeOffsetY').value=0; document.getElementById('beforeOffsetY_num').value=0;
+    render();
+  };
+}
+buildBeforeImgPanel();
 
 function selectedImages(){ return state.selected.map(i=>state.images[i]).filter(Boolean); }
 
 function drawComposedBackground(x,y,w,h){
   const imgs = selectedImages();
+  if(state.imgMode==='ba'){
+    if(imgs.length===0){ ctx.fillStyle='#8a8a8a'; ctx.fillRect(x,y,w,h); }
+    else { drawImageCover(imgs[0],x,y,w,h); }
+    const insetW = w*0.29, insetH = h*0.233;
+    const insetX = x+w*0.647, insetY = y+h*0.045;
+    const insetR = insetW*0.105;
+    ctx.save();
+    roundRectPath(insetX,insetY,insetW,insetH,insetR);
+    ctx.clip();
+    drawBeforeImage(insetX,insetY,insetW,insetH);
+    ctx.restore();
+    ctx.save();
+    roundRectPath(insetX,insetY,insetW,insetH,insetR);
+    ctx.lineWidth = Math.max(1, w*0.0015);
+    ctx.strokeStyle = '#000000';
+    ctx.stroke();
+    ctx.restore();
+    if(styles.badge.on){
+      styledText('badge', 'Before', insetX+insetW*0.115, insetY+insetH*0.177, 'left');
+    }
+    return;
+  }
   if(imgs.length===0){ ctx.fillStyle='#8a8a8a'; ctx.fillRect(x,y,w,h); return; }
   if(imgs.length===1 || state.imgMode==='single'){ drawImageCover(imgs[0],x,y,w,h); return; }
   if(state.imgMode==='vertical'){
@@ -494,6 +566,7 @@ function buildCompPanel(){
         ${rangeNumHTML('l_offx','水平位移',-300,300,s.offsetX)}
         ${rangeNumHTML('l_offy','垂直位移',-300,300,s.offsetY)}
       </div>
+      <button type="button" class="upload-btn" id="l_centerBtn" style="margin-top:2px;padding:6px;">⌖ 置中（重設位移）</button>
       <h3>SVG 圖示</h3>
       <label class="upload-btn" for="svgInput">＋ 匯入 / 更換 SVG 圖示</label>
       <input type="file" id="svgInput" accept=".svg,image/svg+xml">
@@ -528,6 +601,7 @@ function buildCompPanel(){
           ${rangeNumHTML('l_shapeOffX','水平位置',-1500,1500,s.shapeOffsetX)}
           ${rangeNumHTML('l_shapeOffY','垂直位置',-1500,1500,s.shapeOffsetY)}
         </div>
+        <button type="button" class="upload-btn" id="l_shapeCenterBtn" style="margin-top:2px;padding:6px;">⌖ 置中（重設位置）</button>
       </div>
     `;
     document.getElementById('l_color').oninput = e=>{ s.color=e.target.value; render(); };
@@ -535,6 +609,7 @@ function buildCompPanel(){
     document.getElementById('l_dash').onchange = e=>{ s.dash=e.target.checked; render(); };
     wireRangeNum('l_offx', v=>{ s.offsetX=v; render(); });
     wireRangeNum('l_offy', v=>{ s.offsetY=v; render(); });
+    wireCenterBtn('l_centerBtn','l_offx','l_offy',s,'offsetX','offsetY');
     wireRangeNum('l_iconSize', v=>{ s.iconSize=v/100; render(); });
     wireRangeNum('l_iconOpacity', v=>{ s.iconOpacity=v; render(); });
     document.getElementById('l_tintOn').onchange = e=>{ s.tintOn=e.target.checked; render(); };
@@ -547,6 +622,7 @@ function buildCompPanel(){
     wireRangeNum('l_shapeRadius', v=>{ s.shapeRadius=v; render(); });
     wireRangeNum('l_shapeOffX', v=>{ s.shapeOffsetX=v; render(); });
     wireRangeNum('l_shapeOffY', v=>{ s.shapeOffsetY=v; render(); });
+    wireCenterBtn('l_shapeCenterBtn','l_shapeOffX','l_shapeOffY',s,'shapeOffsetX','shapeOffsetY');
     document.getElementById('svgInput').addEventListener('change', e=>{
       const f = e.target.files[0]; if(!f) return;
       const url = URL.createObjectURL(f);
@@ -586,6 +662,7 @@ function buildCompPanel(){
       ${rangeNumHTML('c_offx','水平位移',-300,300,s.offsetX)}
       ${rangeNumHTML('c_offy','垂直位移',-300,300,s.offsetY)}
     </div>
+    <button type="button" class="upload-btn" id="c_centerBtn" style="margin-top:2px;padding:6px;">⌖ 置中（重設位移）</button>
     <div class="two-col">
       ${rangeNumHTML('c_letterSpacing','字距 Letter-spacing',-10,40,s.letterSpacing)}
       ${rangeNumHTML('c_lineHeight','行距 Line-height',0.8,3,s.lineHeight,0.05)}
@@ -615,6 +692,7 @@ function buildCompPanel(){
         ${rangeNumHTML('c_blockOffX','色塊水平位移',-100,100,s.blockOffsetX)}
         ${rangeNumHTML('c_blockOffY','色塊垂直位移',-100,100,s.blockOffsetY)}
       </div>
+      <button type="button" class="upload-btn" id="c_blockCenterBtn" style="margin-top:2px;padding:6px;">⌖ 置中（重設色塊位移）</button>
     </div>
   `;
   if(activeComp==='badge'){
@@ -630,6 +708,7 @@ function buildCompPanel(){
   document.getElementById('c_weight').onchange = e=>{ s.weight=+e.target.value; render(); };
   wireRangeNum('c_offx', v=>{ s.offsetX=v; render(); });
   wireRangeNum('c_offy', v=>{ s.offsetY=v; render(); });
+  wireCenterBtn('c_centerBtn','c_offx','c_offy',s,'offsetX','offsetY');
   wireRangeNum('c_letterSpacing', v=>{ s.letterSpacing=v; render(); });
   wireRangeNum('c_lineHeight', v=>{ s.lineHeight=v; render(); });
   document.getElementById('c_outlineOn').onchange = e=>{ s.outlineOn=e.target.checked; render(); };
@@ -645,26 +724,35 @@ function buildCompPanel(){
   wireRangeNum('c_blockRadius', v=>{ s.blockRadius=v; render(); });
   wireRangeNum('c_blockOffX', v=>{ s.blockOffsetX=v; render(); });
   wireRangeNum('c_blockOffY', v=>{ s.blockOffsetY=v; render(); });
+  wireCenterBtn('c_blockCenterBtn','c_blockOffX','c_blockOffY',s,'blockOffsetX','blockOffsetY');
 }
 buildCompPanel();
 
 // ---------- drawing helpers ----------
-function drawImageCover(img,x,y,w,h){
+function drawImageCoverParams(img,x,y,w,h,offsetX,offsetY,scale){
   const ir = img.width/img.height, tr = w/h;
   let sx,sy,sw,sh;
   if(ir > tr){ sh=img.height; sw=sh*tr; sx=(img.width-sw)/2; sy=0; }
   else{ sw=img.width; sh=sw/tr; sx=0; sy=(img.height-sh)/2; }
-  const scale = state.imgScale || 1;
+  scale = scale || 1;
   if(scale !== 1){
     const nsw = Math.min(img.width, sw/scale), nsh = Math.min(img.height, sh/scale);
     sx += (sw-nsw)/2; sy += (sh-nsh)/2;
     sw = nsw; sh = nsh;
   }
-  const offX = (state.imgOffsetX||0)/100 * sw;
-  const offY = (state.imgOffsetY||0)/100 * sh;
+  const offX = (offsetX||0)/100 * sw;
+  const offY = (offsetY||0)/100 * sh;
   sx = Math.max(0, Math.min(img.width-sw, sx+offX));
   sy = Math.max(0, Math.min(img.height-sh, sy+offY));
   ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
+}
+function drawImageCover(img,x,y,w,h){
+  drawImageCoverParams(img,x,y,w,h, state.imgOffsetX, state.imgOffsetY, state.imgScale);
+}
+function drawBeforeImage(x,y,w,h){
+  const img = (state.beforeImgIndex!=null) ? state.images[state.beforeImgIndex] : null;
+  if(!img){ ctx.fillStyle='#9a9a9a'; ctx.fillRect(x,y,w,h); return; }
+  drawImageCoverParams(img,x,y,w,h, state.beforeOffsetX, state.beforeOffsetY, state.beforeScale);
 }
 function roundRectPath(x,y,w,h,r){
   r = Math.max(0, Math.min(r, Math.min(w,h)/2));
@@ -683,6 +771,18 @@ function wireRangeNum(id,cb){
   if(!r||!n) return;
   r.oninput = ()=>{ n.value=r.value; cb(+r.value); };
   n.oninput = ()=>{ if(n.value==='' || n.value==='-') return; let v=+n.value; if(isNaN(v)) return; r.value=v; cb(v); };
+}
+function wireCenterBtn(btnId, xId, yId, s, xKey, yKey){
+  const btn = document.getElementById(btnId);
+  if(!btn) return;
+  btn.onclick = ()=>{
+    s[xKey]=0; s[yKey]=0;
+    const xr=document.getElementById(xId), xn=document.getElementById(xId+'_num');
+    const yr=document.getElementById(yId), yn=document.getElementById(yId+'_num');
+    if(xr) xr.value=0; if(xn) xn.value=0;
+    if(yr) yr.value=0; if(yn) yn.value=0;
+    render();
+  };
 }
 
 function drawTextBlock(c,text,x,y,align){
@@ -816,8 +916,9 @@ function layoutCard1(g,W,H){
   drawBlockShape(W,H);
   const bx = W*(37/360), by = H*(33/480);
   if(g.badgeOn){
-    styledText('badge', g.badgeLine1, bx, by+styles.badge.size, 'left');
-    if(g.badgeLine2) styledText('badge', g.badgeLine2, bx, by+styles.badge.size*styles.badge.lineHeight, 'left');
+    const badgeLine1Y = by+styles.badge.size;
+    styledText('badge', g.badgeLine1, bx, badgeLine1Y, 'left');
+    if(g.badgeLine2) styledText('badge', g.badgeLine2, bx, badgeLine1Y+styles.badge.size*styles.badge.lineHeight, 'left');
   }
   const tx = W*(37/360), ty = H*(405/480)+styles.title.size*0.35;
   styledText('title', g.title, tx, ty, 'left');
@@ -840,8 +941,9 @@ function layoutCard3(g,W,H){
   drawBlockShape(W,H);
   const bx = W*(37/360), by = H*(33/480);
   if(g.badgeOn){
-    styledText('badge', g.badgeLine1, bx, by+styles.badge.size, 'left');
-    if(g.badgeLine2) styledText('badge', g.badgeLine2, bx, by+styles.badge.size*styles.badge.lineHeight, 'left');
+    const badgeLine1Y = by+styles.badge.size;
+    styledText('badge', g.badgeLine1, bx, badgeLine1Y, 'left');
+    if(g.badgeLine2) styledText('badge', g.badgeLine2, bx, badgeLine1Y+styles.badge.size*styles.badge.lineHeight, 'left');
   }
   const tx = W*(37/360), ty = H*(405/480)+styles.title.size*0.35;
   styledText('title', g.title, tx, ty, 'left');
@@ -856,7 +958,20 @@ function layoutCard4(g,W,H){
   if(g.sub) styledText('subtitle', g.sub, W/2, ty+styles.subtitle.size*styles.subtitle.lineHeight, 'center');
 }
 
-const LAYOUTS = [layoutCard1, layoutCard2, layoutCard3, layoutCard4];
+// card5 — Figma "Frame 1940699568": full-bleed main (After) photo, small rounded inset with a
+// separate Before photo top-right, small "Before" label on the inset, big title bottom-left
+// card5 — Figma "Frame 1940699568": big title bottom-left. The Before/After inset photo is
+// now handled generically by drawComposedBackground() via the "BA 對比" 底圖版式 option, so
+// this layout works whether or not BA mode is active — it just supplies the distinctive
+// large bottom-left headline treatment from the Figma reference.
+function layoutCard5(g,W,H){
+  drawComposedBackground(0,0,W,H);
+  drawBlockShape(W,H);
+  const tx = W*(52/654), ty = H*(784/922)+styles.title.size*0.35;
+  styledText('title', g.title, tx, ty, 'left');
+}
+
+const LAYOUTS = [layoutCard1, layoutCard2, layoutCard3, layoutCard4, layoutCard5];
 
 // ---------- main render (always full-bleed export, no border/clip) ----------
 function feedRowSpec(sz){
@@ -873,14 +988,14 @@ function buildGroupOrder(){
 function groupLabel(szIdx,letter){
   return groupNames[szIdx] || `${letter}組 · ${SIZES[szIdx].label}`;
 }
-function buildSizeGroupRowEl(szIdx, groupItems){
+function buildSizeGroupRowEl(szIdx, groupItems, activeDataUrl){
   // groupItems: array of {cardSnap, i}, all sharing the same size — laid out side by side, scrollable
   const spec = feedRowSpec(SIZES[szIdx]);
   const row = document.createElement('div');
   row.className = 'ph-row ph-row-scroll';
   groupItems.forEach(({cardSnap,i})=>{
     let dataUrl;
-    if(i===activeCardIdx){ dataUrl = cv.toDataURL('image/png'); }
+    if(i===activeCardIdx){ dataUrl = activeDataUrl; }
     else { dataUrl = captureCardImage(cardSnap).dataUrl; }
     const slot = document.createElement('div');
     slot.className = 'ph-slot' + (i===activeCardIdx?' live':'');
@@ -901,10 +1016,13 @@ function captureCardImage(cardSnap){
   const savedLayoutIdx = state.layoutIdx, savedSizeIdx = state.sizeIdx;
   const savedImgMode = state.imgMode, savedImgRatio = state.imgRatio, savedSelected = state.selected;
   const savedOffX = state.imgOffsetX, savedOffY = state.imgOffsetY, savedScale = state.imgScale;
+  const savedBeforeIdx = state.beforeImgIndex, savedBeforeOffX = state.beforeOffsetX, savedBeforeOffY = state.beforeOffsetY, savedBeforeScale = state.beforeScale;
   styles = JSON.parse(JSON.stringify(cardSnap.styles));
   state.layoutIdx = cardSnap.layoutIdx; state.sizeIdx = cardSnap.sizeIdx;
   state.imgMode = cardSnap.imgMode; state.imgRatio = cardSnap.imgRatio;
   state.imgOffsetX = cardSnap.imgOffsetX||0; state.imgOffsetY = cardSnap.imgOffsetY||0; state.imgScale = cardSnap.imgScale||1;
+  state.beforeImgIndex = (cardSnap.beforeImgIndex!=null && cardSnap.beforeImgIndex<state.images.length) ? cardSnap.beforeImgIndex : null;
+  state.beforeOffsetX = cardSnap.beforeOffsetX||0; state.beforeOffsetY = cardSnap.beforeOffsetY||0; state.beforeScale = cardSnap.beforeScale||1;
   state.selected = (cardSnap.selected||[]).filter(i=>i<state.images.length);
   const sz = SIZES[state.sizeIdx];
   cv.width = sz.w; cv.height = sz.h;
@@ -916,11 +1034,13 @@ function captureCardImage(cardSnap){
   state.layoutIdx = savedLayoutIdx; state.sizeIdx = savedSizeIdx;
   state.imgMode = savedImgMode; state.imgRatio = savedImgRatio; state.selected = savedSelected;
   state.imgOffsetX = savedOffX; state.imgOffsetY = savedOffY; state.imgScale = savedScale;
+  state.beforeImgIndex = savedBeforeIdx; state.beforeOffsetX = savedBeforeOffX; state.beforeOffsetY = savedBeforeOffY; state.beforeScale = savedBeforeScale;
   return { dataUrl, sz };
 }
 function refreshPhonePreview(){
   const wrap = document.getElementById('phSections');
   wrap.innerHTML = '';
+  const activeDataUrl = cv.toDataURL('image/png');
   const groupOrder = buildGroupOrder();
   const letters = 'ABCDEFGHIJ';
   groupOrder.forEach((szIdx,gi)=>{
@@ -931,7 +1051,7 @@ function refreshPhonePreview(){
     title.className = 'ph-section-title';
     title.textContent = groupLabel(szIdx, letters[gi]);
     section.appendChild(title);
-    section.appendChild(buildSizeGroupRowEl(szIdx, groupItems));
+    section.appendChild(buildSizeGroupRowEl(szIdx, groupItems, activeDataUrl));
     wrap.appendChild(section);
   });
   // re-render the shared canvas back to the active card (captureCardImage may have overwritten it)
@@ -974,8 +1094,15 @@ function render(){
     syncGroupStyles(activeCardIdx);
     buildCardRow();
   }
-  refreshPhonePreview();
 }
+
+document.getElementById('savePreviewBtn').onclick = (e)=>{
+  refreshPhonePreview();
+  const btn = e.currentTarget;
+  const original = btn.textContent;
+  btn.textContent = '✓ 已更新';
+  setTimeout(()=>{ btn.textContent = original; }, 900);
+};
 
 document.getElementById('downloadBtn').onclick = ()=>{
   const link = document.createElement('a');
@@ -992,6 +1119,7 @@ function snapshotState(){
     layoutIdx: state.layoutIdx, sizeIdx: state.sizeIdx,
     imgMode: state.imgMode, imgRatio: state.imgRatio,
     imgOffsetX: state.imgOffsetX, imgOffsetY: state.imgOffsetY, imgScale: state.imgScale,
+    beforeImgIndex: state.beforeImgIndex, beforeOffsetX: state.beforeOffsetX, beforeOffsetY: state.beforeOffsetY, beforeScale: state.beforeScale,
     selected: [...state.selected],
   };
 }
@@ -1000,16 +1128,20 @@ function applySnapshot(snap){
   state.layoutIdx = snap.layoutIdx; state.sizeIdx = snap.sizeIdx;
   state.imgMode = snap.imgMode; state.imgRatio = snap.imgRatio;
   state.imgOffsetX = snap.imgOffsetX||0; state.imgOffsetY = snap.imgOffsetY||0; state.imgScale = snap.imgScale||1;
+  state.beforeImgIndex = (snap.beforeImgIndex!=null && snap.beforeImgIndex<state.images.length) ? snap.beforeImgIndex : null;
+  state.beforeOffsetX = snap.beforeOffsetX||0; state.beforeOffsetY = snap.beforeOffsetY||0; state.beforeScale = snap.beforeScale||1;
   if(snap.selected) state.selected = snap.selected.filter(i=>i<state.images.length);
   imgModeSel.value = state.imgMode;
-  ratioWrap.style.display = state.imgMode==='single' ? 'none' : 'block';
+  ratioWrap.style.display = (state.imgMode==='vertical' || state.imgMode==='horizontal') ? 'block' : 'none';
   imgRatioInput.value = state.imgRatio*100;
   document.getElementById('imgRatio_num').value = state.imgRatio*100;
   refreshChips();
   renderThumbs();
   buildCompPanel();
   buildImgPosPanel();
+  buildBeforeImgPanel();
   render();
+  refreshPhonePreview();
 }
 function buildCardRow(){
   const container = document.getElementById('cardRow');
@@ -1081,6 +1213,7 @@ refreshChips();
 cards.push(snapshotState());
 buildCardRow();
 render();
+refreshPhonePreview();
 </script>
 </body>
 </html>
