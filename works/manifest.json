@@ -4,7 +4,7 @@
     "title": "Vinge",
     "category": "Fashion Magazine",
     "cover": "vinge-cover.jpg",
-    "count": 22,
+    "count": 21,
     "videos": [
     ],
     "images": [
@@ -28,8 +28,7 @@
     "vinge-18.jpg",
     "vinge-19.jpg",
     "vinge-20.jpg",
-    "vinge-21.jpg",
-    "vinge-22.jpg"    ]
+    "vinge-21.jpg"    ]
   },
   {
     "slug": "minou",
