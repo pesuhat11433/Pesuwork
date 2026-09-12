@@ -703,6 +703,12 @@
   .ss-cap { text-align: center; font-family: var(--sans); }
   .ss-cap .n { font-size: 0.66rem; letter-spacing: 0.2em; color: var(--ink3); }
   .ss-cap .n b { color: #F7F6F2; font-weight: 400; }
+  .ss-thumbs { display: flex; gap: 7px; overflow-x: auto; max-width: 100%; padding: 6px 2px 2px; scrollbar-width: thin; scrollbar-color: rgba(247,246,242,0.3) transparent; }
+  .ss-thumbs::-webkit-scrollbar { height: 5px; }
+  .ss-thumbs::-webkit-scrollbar-thumb { background: rgba(247,246,242,0.28); border-radius: 3px; }
+  .ss-thumbs img { height: 54px; width: auto; max-width: 90px; object-fit: cover; border-radius: 2px; opacity: 0.38; cursor: pointer; transition: opacity 0.2s; flex: 0 0 auto; }
+  .ss-thumbs img:hover { opacity: 0.75; }
+  .ss-thumbs img.on { opacity: 1; outline: 1.5px solid #F7F6F2; outline-offset: 1px; }
 
   /* ===== flip-card deck (戀愛陪審團) ===== */
   .pv-cards { display: flex; flex-direction: column; align-items: center; gap: 26px; }
@@ -767,34 +773,37 @@
   .pv-videos { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 20px; }
   .pv-videos video { width: 100%; border-radius: 4px; background: #000; display: block; }
 
-  /* flipbook */
+  /* flipbook — real two-page book */
   .pv-book-wrap { display: flex; flex-direction: column; align-items: center; gap: 24px; }
-  .book { position: relative; width: min(540px, 92vw); aspect-ratio: 5/6; perspective: 2400px; perspective-origin: 0% 50%; }
-  .book .page {
-    position: absolute; inset: 0; transform-style: preserve-3d; transform-origin: left center;
-    transition: transform 0.9s cubic-bezier(0.42,0.02,0.18,1); cursor: pointer; border-radius: 2px;
-    box-shadow: 0 2px 6px rgba(28,27,24,0.07), 0 14px 30px rgba(28,27,24,0.12);
+  .book2 {
+    position: relative; width: min(880px, 94vw); aspect-ratio: 1.42 / 1;
+    perspective: 2600px; perspective-origin: 50% 50%;
+    background: #fbfaf7; border-radius: 3px; box-shadow: 0 26px 60px rgba(0,0,0,0.4);
   }
-  .book .page.flipped { transform: rotateY(-180deg); }
-  .book .side {
+  .b2-base { position: absolute; left: 0; top: 0; width: 50%; height: 100%; z-index: 0; overflow: hidden; }
+  .b2-leaf {
+    position: absolute; right: 0; top: 0; width: 50%; height: 100%;
+    transform-origin: left center; transform-style: preserve-3d;
+    transition: transform 0.94s cubic-bezier(0.42,0.02,0.18,1); cursor: pointer;
+  }
+  .b2-leaf.flipped { transform: rotateY(-180deg); }
+  .b2-leaf.turning { z-index: 100 !important; box-shadow: 0 12px 34px rgba(0,0,0,0.3); }
+  .b2-side {
     position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
-    overflow: hidden; border-radius: 2px; background: #fbfaf7;
-    box-shadow: inset 0 0 0 0.5px rgba(28,27,24,0.06);
+    overflow: hidden; background: #fbfaf7; box-shadow: inset 0 0 0 0.5px rgba(28,27,24,0.05);
   }
-  .book .side.back { transform: rotateY(180deg); }
-  .book .side img { width: 100%; height: 100%; object-fit: contain; display: block; background: #fbfaf7; }
-  /* soft spine gradient */
-  .book .side::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 44px; background: linear-gradient(90deg, rgba(28,27,24,0.08), transparent); pointer-events: none; z-index: 2; }
-  /* gentle gloss sweeping across a page as it turns → sense of curvature */
-  .book .side::before {
-    content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
-    background: linear-gradient(105deg, rgba(28,27,24,0.12) 0%, rgba(28,27,24,0.01) 30%, rgba(255,255,255,0.38) 60%, rgba(28,27,24,0.05) 100%);
-  }
-  .book .page.turning { box-shadow: 0 10px 28px rgba(28,27,24,0.2); }
-  .book .page.turning .side::before { animation: pageSheen 0.9s ease; }
-  @keyframes pageSheen { 0% { opacity: 0; } 45% { opacity: 0.6; } 100% { opacity: 0; } }
-  .book .pagenum { position: absolute; bottom: 10px; right: 14px; font-size: 10px; color: #7a7870; background: rgba(255,255,255,0.8); padding: 1px 7px; border-radius: 99px; font-family: var(--sans); }
-  .book .book-end { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: var(--serif); font-style: italic; color: #bbb; font-size: 1.4rem; }
+  .b2-side.b2-back { transform: rotateY(180deg); }
+  .b2-face { width: 100%; height: 100%; }
+  .b2-face.b2-full img { width: 100%; height: 100%; object-fit: contain; display: block; background: #fbfaf7; }
+  .b2-half { background-size: 200% 100%; background-repeat: no-repeat; }
+  .b2-blank { background: #fbfaf7; }
+  .b2-spine { position: absolute; top: 0; bottom: 0; left: calc(50% - 22px); width: 44px; z-index: 40; pointer-events: none;
+    background: linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.10) 44%, rgba(0,0,0,0.16) 50%, rgba(0,0,0,0.10) 56%, rgba(0,0,0,0) 100%); }
+  /* gloss sweep as a leaf turns → sense of curvature */
+  .b2-side::before { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
+    background: linear-gradient(105deg, rgba(28,27,24,0.14) 0%, rgba(28,27,24,0.02) 32%, rgba(255,255,255,0.34) 62%, rgba(28,27,24,0.06) 100%); }
+  .b2-leaf.turning .b2-side::before { animation: pageSheen 0.94s ease; }
+  @keyframes pageSheen { 0% { opacity: 0; } 45% { opacity: 0.55; } 100% { opacity: 0; } }
   .pv-controls { display: flex; align-items: center; gap: 20px; }
   .pv-controls button { font-family: var(--sans); font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; color: #F7F6F2; background: none; border: 0.5px solid rgba(247,246,242,0.3); border-radius: 999px; padding: 9px 20px; cursor: pointer; transition: all 0.2s; }
   .pv-controls button:hover:not(:disabled) { background: #F7F6F2; color: #1C1B18; }
@@ -819,7 +828,7 @@
     .ss-stage { height: 54vh; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .book .page { transition: none; }
+    .b2-leaf { transition: none; }
   }
 </style>
 </head>
@@ -1145,8 +1154,17 @@ function renderSlideshow(p, from){
         <button id="ss-auto">&#9654; Auto</button>
         <button id="ss-next">Next &rsaquo;</button>
       </div>
+      <div class="ss-thumbs" id="ss-thumbs"></div>
     </div></div>`;
   const a = stageEl().querySelector('.ss-a'), b = stageEl().querySelector('.ss-b');
+  const thumbBox = document.getElementById('ss-thumbs');
+  const thumbs = list.map((src,i)=>{
+    const t = new Image(); t.src = src; t.loading = 'lazy'; t.alt = '';
+    if (i === 0) t.className = 'on';
+    t.addEventListener('click', () => show(i));
+    thumbBox.appendChild(t);
+    return t;
+  });
   let cur = 0, showingA = true, timer = null;
   a.src = list[0];
   function show(i){
@@ -1156,6 +1174,8 @@ function renderSlideshow(p, from){
     on.classList.add('is-on'); off.classList.remove('is-on');
     showingA = !showingA;
     document.getElementById('ss-idx').textContent = String(cur+1).padStart(2,'0');
+    thumbs.forEach((t,j)=>t.classList.toggle('on', j === cur));
+    thumbs[cur].scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
   }
   function nav(d){ show(cur + d); }
   bookTurn = nav;
@@ -1195,44 +1215,77 @@ function renderFlipbook(p, from){
   const list = []; for (let i=0;i<imgCount(p);i++) list.push(imgUrl(p,i));
   stageEl().innerHTML = `<div class="pv-inner">${headBlock(p,from)}
     <div class="pv-book-wrap">
-      <div class="book" id="pv-book"></div>
+      <div class="book2" id="pv-book">
+        <div class="b2-base" id="pv-base"></div>
+        <div class="b2-spine"></div>
+      </div>
       <div class="pv-controls">
         <button id="pv-prev">&lsaquo; Prev</button>
         <span class="pv-counter" id="pv-counter"></span>
         <button id="pv-next">Next &rsaquo;</button>
       </div>
-      <div class="pv-flip-hint">點頁面右側翻頁 · ← → 方向鍵</div>
+      <div class="pv-flip-hint">點右半頁翻頁 · ← → 方向鍵</div>
     </div></div>`;
-  initBook(list);
-}
-function initBook(imgs){
-  const book = document.getElementById('pv-book'); if (!book) return;
-  book.innerHTML = '';
-  imgs.forEach((src,i)=>{
-    const pg = document.createElement('div');
-    pg.className = 'page'; pg.style.zIndex = imgs.length - i;
-    // one image per leaf (spreads are already a single wide image); back is blank paper
-    pg.innerHTML = `
-      <div class="side front"><img src="${src}" loading="lazy" alt=""><span class="pagenum">${i+1}</span></div>
-      <div class="side back"></div>`;
-    book.appendChild(pg);
+  // preload to learn each image's aspect ratio, then lay out a real two-page book
+  let loaded = 0; const dims = new Array(list.length);
+  list.forEach((src,i)=>{
+    const im = new Image();
+    im.onload = im.onerror = () => {
+      dims[i] = (im.naturalWidth && im.naturalHeight) ? im.naturalWidth/im.naturalHeight : 0.75;
+      if (++loaded === list.length) buildBook2(list, dims);
+    };
+    im.src = src;
   });
-  const pages = [...book.querySelectorAll('.page')];
-  let cur = 0;
+}
+function faceHTML(face){
+  if (!face) return '<div class="b2-face b2-blank"></div>';
+  if (face.pos === 'full') return `<div class="b2-face b2-full"><img src="${face.src}" alt=""></div>`;
+  const px = face.pos === 'left' ? 'left' : 'right';
+  return `<div class="b2-face b2-half" style="background-image:url('${face.src}');background-position:${px} center;"></div>`;
+}
+function buildBook2(list, dims){
+  const book = document.getElementById('pv-book'); if (!book) return;
+  // flat list of single-page faces; align spreads to even (left) indices, singles to recto
+  const pages = [];
+  list.forEach((src,i)=>{
+    if (dims[i] >= 1.25){                                   // wide → two facing half-pages
+      if (pages.length % 2 === 1) pages.push(null);
+      pages.push({src,pos:'left'}); pages.push({src,pos:'right'});
+    } else {                                                // portrait → single page on the right (recto)
+      if (pages.length % 2 === 0) pages.push(null);
+      pages.push({src,pos:'full'});
+    }
+  });
+  if (pages.length % 2 === 1) pages.push(null);
+  const spreads = pages.length / 2;
+  const leftFace  = s => pages[2*s];
+  const rightFace = s => pages[2*s+1];
+
+  document.getElementById('pv-base').innerHTML = faceHTML(leftFace(0));   // static first left page
+
+  const leaves = [];
+  for (let i=0;i<spreads;i++){                              // leaf i: front = right page of spread i, back = left page of spread i+1
+    const lf = document.createElement('div');
+    lf.className = 'b2-leaf'; lf.style.zIndex = spreads - i;
+    lf.innerHTML = `<div class="b2-side b2-front">${faceHTML(rightFace(i))}</div>
+                    <div class="b2-side b2-back">${faceHTML(leftFace(i+1))}</div>`;
+    book.appendChild(lf); leaves.push(lf);
+  }
+  let cur = 0;                                              // flipped leaves = current spread index
   const counter = document.getElementById('pv-counter');
   function render(){
-    pages.forEach((p,i)=>{ const f = i < cur; p.classList.toggle('flipped',f); p.style.zIndex = f ? i : imgs.length - i; });
-    counter.textContent = `${Math.min(cur+1,imgs.length)} / ${imgs.length}`;
+    leaves.forEach((lf,i)=>{ const f = i < cur; lf.classList.toggle('flipped',f); lf.style.zIndex = f ? i : spreads - i; });
+    counter.textContent = `${cur+1} / ${spreads}`;
     document.getElementById('pv-prev').disabled = cur === 0;
-    document.getElementById('pv-next').disabled = cur >= imgs.length - 1;
+    document.getElementById('pv-next').disabled = cur >= spreads - 1;
   }
   function turn(d){
-    const next = Math.max(0, Math.min(imgs.length-1, cur+d));
+    const next = Math.max(0, Math.min(spreads-1, cur+d));
     if (next === cur) return;
-    const flipIdx = d > 0 ? cur : next;   // the page whose flipped state toggles
+    const flipIdx = d > 0 ? cur : next;
     cur = next; render();
-    const pg = pages[flipIdx];
-    if (pg){ pg.classList.add('turning'); setTimeout(() => pg.classList.remove('turning'), 860); }
+    const lf = leaves[flipIdx];
+    if (lf){ lf.classList.add('turning'); setTimeout(()=>lf.classList.remove('turning'), 940); }
   }
   bookTurn = turn;
   book.addEventListener('click', e => { const r = book.getBoundingClientRect(); turn(e.clientX - r.left > r.width/2 ? 1 : -1); });
