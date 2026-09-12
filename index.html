@@ -779,7 +779,19 @@
     position: relative; width: min(880px, 94vw); aspect-ratio: 1.42 / 1;
     perspective: 2600px; perspective-origin: 50% 50%;
     background: #fbfaf7; border-radius: 3px; box-shadow: 0 26px 60px rgba(0,0,0,0.4);
+    transition: background 0.4s ease, box-shadow 0.4s ease;
   }
+  .b2-open { position: absolute; inset: 0; transition: opacity 0.45s ease; }
+  .b2-cover {
+    position: absolute; left: 25%; width: 50%; top: 0; height: 100%; z-index: 60;
+    transform-origin: left center; transform-style: preserve-3d;
+    transition: transform 0.85s cubic-bezier(0.42,0.02,0.18,1), opacity 0.5s ease;
+  }
+  .b2-cover img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 2px; box-shadow: 0 22px 55px rgba(0,0,0,0.5); }
+  /* closed book → only the cover on the dark backdrop (no paper pages, no blank left) */
+  .book2.at-cover { background: transparent; box-shadow: none; }
+  .book2.at-cover .b2-open { opacity: 0; pointer-events: none; }
+  .book2:not(.at-cover) .b2-cover { opacity: 0; pointer-events: none; transform: rotateY(-172deg); }
   .b2-base { position: absolute; left: 0; top: 0; width: 50%; height: 100%; z-index: 0; overflow: hidden; }
   .b2-leaf {
     position: absolute; right: 0; top: 0; width: 50%; height: 100%;
@@ -1228,10 +1240,7 @@ function renderFlipbook(p, from){
   const bookList = cc ? [all[0], ...pages] : all; // main cover + interior
   stageEl().innerHTML = `<div class="pv-inner">${headBlock(p,from)}
     <div class="pv-book-wrap">
-      <div class="book2" id="pv-book">
-        <div class="b2-base" id="pv-base"></div>
-        <div class="b2-spine"></div>
-      </div>
+      <div class="book2 at-cover" id="pv-book"></div>
       <div class="pv-controls">
         <button id="pv-prev">&lsaquo; Prev</button>
         <span class="pv-counter" id="pv-counter"></span>
@@ -1270,15 +1279,17 @@ function faceHTML(face){
   const px = face.pos === 'left' ? 'left' : 'right';
   return `<div class="b2-face b2-half" style="background-image:url('${face.src}');background-position:${px} center;"></div>`;
 }
-function buildBook2(list, dims){
+function buildBook2(bookList, dims){
   const book = document.getElementById('pv-book'); if (!book) return;
-  // flat list of single-page faces; align spreads to even (left) indices, singles to recto
+  const coverSrc = bookList[0];                             // main cover = standalone front (no left page)
+  const interior = bookList.slice(1), idims = dims.slice(1);
+  // interior → flat single-page faces; spreads aligned to even (left), singles to recto
   const pages = [];
-  list.forEach((src,i)=>{
-    if (dims[i] >= 1.25){                                   // wide → two facing half-pages
+  interior.forEach((src,i)=>{
+    if (idims[i] >= 1.25){
       if (pages.length % 2 === 1) pages.push(null);
       pages.push({src,pos:'left'}); pages.push({src,pos:'right'});
-    } else {                                                // portrait → single page on the right (recto)
+    } else {
       if (pages.length % 2 === 0) pages.push(null);
       pages.push({src,pos:'full'});
     }
@@ -1288,31 +1299,42 @@ function buildBook2(list, dims){
   const leftFace  = s => pages[2*s];
   const rightFace = s => pages[2*s+1];
 
-  document.getElementById('pv-base').innerHTML = faceHTML(leftFace(0));   // static first left page
+  book.innerHTML = `
+    <div class="b2-open" id="b2-open">
+      <div class="b2-base" id="pv-base"></div>
+      <div class="b2-spine"></div>
+    </div>
+    <div class="b2-cover" id="b2-cover"><img src="${coverSrc}" alt=""></div>`;
+  const openEl = document.getElementById('b2-open');
+  document.getElementById('pv-base').innerHTML = faceHTML(leftFace(0));
 
   const leaves = [];
-  for (let i=0;i<spreads;i++){                              // leaf i: front = right page of spread i, back = left page of spread i+1
+  for (let i=0;i<spreads;i++){
     const lf = document.createElement('div');
     lf.className = 'b2-leaf'; lf.style.zIndex = spreads - i;
     lf.innerHTML = `<div class="b2-side b2-front">${faceHTML(rightFace(i))}</div>
                     <div class="b2-side b2-back">${faceHTML(leftFace(i+1))}</div>`;
-    book.appendChild(lf); leaves.push(lf);
+    openEl.appendChild(lf); leaves.push(lf);
   }
-  let cur = 0;                                              // flipped leaves = current spread index
+  const total = spreads + 1;                                // view 0 = cover; views 1..spreads = interior spread (v-1)
+  let cur = 0;
   const counter = document.getElementById('pv-counter');
   function render(){
-    leaves.forEach((lf,i)=>{ const f = i < cur; lf.classList.toggle('flipped',f); lf.style.zIndex = f ? i : spreads - i; });
-    counter.textContent = `${cur+1} / ${spreads}`;
+    book.classList.toggle('at-cover', cur === 0);
+    const s = Math.max(0, cur - 1);                         // flipped interior leaves
+    leaves.forEach((lf,i)=>{ const f = i < s; lf.classList.toggle('flipped',f); lf.style.zIndex = f ? i : spreads - i; });
+    counter.textContent = cur === 0 ? 'Cover' : `${cur} / ${spreads}`;
     document.getElementById('pv-prev').disabled = cur === 0;
-    document.getElementById('pv-next').disabled = cur >= spreads - 1;
+    document.getElementById('pv-next').disabled = cur >= total - 1;
   }
   function turn(d){
-    const next = Math.max(0, Math.min(spreads-1, cur+d));
+    const next = Math.max(0, Math.min(total-1, cur+d));
     if (next === cur) return;
-    const flipIdx = d > 0 ? cur : next;
-    cur = next; render();
-    const lf = leaves[flipIdx];
-    if (lf){ lf.classList.add('turning'); setTimeout(()=>lf.classList.remove('turning'), 940); }
+    const prev = cur; cur = next; render();
+    if (prev >= 1 && next >= 1){                            // interior page-turn sheen
+      const lf = leaves[d > 0 ? prev-1 : next-1];
+      if (lf){ lf.classList.add('turning'); setTimeout(()=>lf.classList.remove('turning'), 940); }
+    }
   }
   bookTurn = turn;
   book.addEventListener('click', e => { const r = book.getBoundingClientRect(); turn(e.clientX - r.left > r.width/2 ? 1 : -1); });
