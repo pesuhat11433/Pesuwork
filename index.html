@@ -683,32 +683,44 @@
 <style>
   /* ===== data-driven project folders ===== */
   .works-scene { height: 720px; }
-  /* Nordic minimal folder cards (no preview image) */
-  .sfolder .folder-card {
-    width: 142px; padding: 15px 16px 16px; text-align: left;
-    background: rgba(255,255,255,0.45);
-    border: 0.5px solid var(--line);
-    border-radius: 3px;
-    transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
-  }
-  .sfolder:hover .folder-card {
-    background: rgba(255,255,255,0.92);
-    border-color: var(--ink3);
-    box-shadow: 0 12px 30px rgba(28,27,24,0.09);
-  }
-  .sfolder .fc-top { display: flex; align-items: center; justify-content: space-between; }
-  .sfolder .fidx { font-size: 10px; letter-spacing: 0.16em; color: var(--ink3); font-family: var(--sans); }
-  .sfolder .fc-dot { width: 7px; height: 7px; border-radius: 50%; display: block; }
-  .sfolder .fc-glyph { width: 30px; height: 23px; display: block; margin: 14px 0 12px; color: var(--ink2); }
-  .sfolder .fname {
-    font-family: var(--serif); font-size: 1.2rem; font-weight: 400; color: var(--ink);
-    line-height: 1.1; max-width: 118px;
-  }
-  .sfolder .fc-rule { display: block; width: 20px; height: 2px; margin: 10px 0; border-radius: 2px; opacity: 0.9; }
-  .sfolder .fmeta {
-    font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--ink3); font-family: var(--sans);
-  }
+  /* folder icon + text decoration (no preview image) */
+  .sfolder { text-align: center; }
+  .sfolder .fidx { display: block; font-size: 10px; letter-spacing: 0.18em; color: var(--ink3); font-family: var(--sans); margin-bottom: 5px; }
+  .sfolder .folder-ic .fsvg { width: 104px; height: 84px; display: block; margin: 0 auto; filter: drop-shadow(0 7px 16px rgba(28,27,24,0.14)); }
+  .sfolder .fname { font-family: var(--serif); font-size: 1.1rem; font-weight: 400; color: var(--ink); margin-top: 9px; line-height: 1.1; }
+  .sfolder .fmeta { font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); font-family: var(--sans); margin-top: 3px; }
+  /* sub-project tiles inside a folder view (dark bg) */
+  .pv-sub .fidx { color: var(--ink3); margin-bottom: 6px; }
+  .pv-sub .folder-ic .fsvg { width: 96px; height: 78px; }
+  .pv-sub .fname { color: #F7F6F2; font-family: var(--serif); font-size: 1.05rem; margin-top: 8px; }
+  .pv-sub .fmeta { color: var(--ink3); font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 3px; }
+
+  /* ===== slideshow gallery ===== */
+  .pv-slideshow { display: flex; flex-direction: column; align-items: center; gap: 26px; }
+  .ss-stage { position: relative; width: 100%; height: min(66vh, 620px); display: flex; align-items: center; justify-content: center; }
+  .ss-img { position: absolute; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 3px; opacity: 0; transition: opacity 0.85s ease; box-shadow: 0 22px 55px rgba(0,0,0,0.42); }
+  .ss-img.is-on { opacity: 1; }
+  .ss-cap { text-align: center; font-family: var(--sans); }
+  .ss-cap .n { font-size: 0.66rem; letter-spacing: 0.2em; color: var(--ink3); }
+  .ss-cap .n b { color: #F7F6F2; font-weight: 400; }
+
+  /* ===== flip-card deck (戀愛陪審團) ===== */
+  .pv-cards { display: flex; flex-direction: column; align-items: center; gap: 26px; }
+  .fc-card { width: min(360px, 82vw); height: min(62vh, 540px); position: relative; transform-style: preserve-3d; transition: transform 0.26s ease; cursor: pointer; }
+  .fc-card.flipping { transform: rotateY(90deg); }
+  .fc-card img { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; background: #fbfaf7; box-shadow: 0 18px 44px rgba(0,0,0,0.5); display: block; }
+  .fc-hint { font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink3); }
+
+  /* ===== minou nail colour picker ===== */
+  .pv-nails { display: flex; flex-direction: column; align-items: center; gap: 30px; }
+  .nail-hand { width: min(320px, 74vw); display: block; }
+  .nail-hand .nail { transition: fill 0.45s ease; }
+  .swatches { display: flex; gap: 13px; flex-wrap: wrap; justify-content: center; max-width: 420px; }
+  .swatch { width: 34px; height: 34px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(247,246,242,0.22); transition: transform 0.15s, border-color 0.15s; }
+  .swatch:hover { transform: scale(1.14); }
+  .swatch.active { border-color: #F7F6F2; transform: scale(1.14); }
+  .nail-label { font-size: 0.64rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink3); }
+  .nail-label b { color: #F7F6F2; font-weight: 400; }
 
   /* ===== project viewer overlay ===== */
   .pv-overlay { display: none; position: fixed; inset: 0; background: rgba(20,19,17,0.94); z-index: 9999; }
@@ -800,12 +812,11 @@
 
   @media (max-width: 768px) {
     .works-scene { height: 560px; }
-    .sfolder .folder-icon { width: 92px; height: 74px; }
-    .sfolder .folder-icon .fsvg { width: 92px; height: 74px; }
-    .sfolder .folder-cover { width: 50px; height: 50px; }
-    .sfolder .fname { font-size: 10px; }
+    .sfolder .folder-ic .fsvg { width: 84px; height: 68px; }
+    .sfolder .fname { font-size: 0.95rem; }
     .pv-inner { padding: 70px 16px 80px; }
     .pv-back { position: static; display: inline-block; margin-bottom: 16px; }
+    .ss-stage { height: 54vh; }
   }
   @media (prefers-reduced-motion: reduce) {
     .book .page { transition: none; }
@@ -1027,7 +1038,7 @@ const WB = 'works/';
 // Top-level folders scattered on the desktop scene
 const PROJECTS = [
   { slug:'vinge',        title:'Vinge',            cat:'Fashion Magazine', count:21, view:'flipbook', color:['#8C7B6B','#B7A897'] },
-  { slug:'minou',        title:'minou nail',       cat:'Branding · DM',    count:12, view:'gallery',  color:['#57BEB2','#96D9D0'] },
+  { slug:'minou',        title:'minou nail',       cat:'Branding · DM',    count:12, view:'nails',    color:['#57BEB2','#96D9D0'] },
   { slug:'nius-cafe',    title:'Nius Cafe',        cat:'Space · Branding', count:21, view:'gallery',  color:['#D98C6A','#EBB79E'] },
   { slug:'illustration', title:'Illustration',     cat:'Illustration',     count:17, view:'gallery',  color:['#C9A24B','#E3C77E'] },
   { slug:'oshare',       title:'Oshare',           cat:'Editorial',        count:6,  view:'gallery',  color:['#B98BD1','#D6B6E6'] },
@@ -1045,7 +1056,7 @@ const PROJECTS = [
 
 // Sub-projects inside the Niusnews folder
 const CHILD = {
-  'love-jury':      { title:'戀愛陪審團',      cat:'Editorial IP',   count:53, view:'gallery', color:['#E58BA6','#F4B8C9'] },
+  'love-jury':      { title:'戀愛陪審團',      cat:'Editorial IP',   count:53, view:'cards',   color:['#E58BA6','#F4B8C9'] },
   'holoscope':      { title:'Holoscope 星座',  cat:'Editorial IP',   count:12, view:'gallery', color:['#7E86D6','#AEB4EC'] },
   'leopard-weekly': { title:'豹寶週報',        cat:'Editorial',      count:27, view:'gallery', color:['#D8A94E','#ECCB86'] },
   'niusnews-event': { title:'Niusnews Events', cat:'Event',          count:19, view:'gallery', color:['#E2A0B4','#F2C6D3'] },
@@ -1055,18 +1066,18 @@ const CHILD = {
 
 // scatter positions [left%, top%, rotateDeg] — irregular, hand-placed for a natural messy-desk feel
 const POS = [
-  [4,  8,  -4],   // vinge
-  [26, 2,   3],   // minou
-  [46, 11, -2],   // nius-cafe
-  [63, 4,   4],   // illustration
-  [82, 13, -5],   // oshare
-  [88, 40,  3],   // space
-  [2,  34,  2],   // cabin-crew
-  [16, 58, -3],   // perfect
-  [37, 70,  4],   // web
-  [55, 61, -2],   // ah
-  [73, 69,  3],   // niusnews
-  [3,  66,  5]    // meitu-creative
+  [4,  7,  -4],   // vinge
+  [25, 3,   3],   // minou
+  [46, 10, -2],   // nius-cafe
+  [64, 3,   4],   // illustration
+  [83, 12, -5],   // oshare
+  [89, 44,  3],   // space
+  [1,  38,  2],   // cabin-crew
+  [10, 64, -3],   // perfect
+  [34, 74,  4],   // web
+  [58, 73, -2],   // ah
+  [78, 66,  3],   // niusnews
+  [2,  67,  5]    // meitu-creative
 ];
 
 // registry
@@ -1092,15 +1103,15 @@ function metaLine(p){
   if (p.view === 'folder')   return `${p.children.length} projects`;
   return `${imgCount(p)} ${imgCount(p) > 1 ? 'images' : 'image'}`;
 }
-function folderIconHTML(p){
+function folderSVG(p){
   const [c1,c2] = p.color;
-  return `<div class="folder-icon">
-      <svg class="fsvg" viewBox="0 0 62 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M1 9C1 6.8 2.8 5 5 5H20L26 11H57C59.2 11 61 12.8 61 15V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V9Z" fill="${c1}"/>
-        <path d="M1 17H61V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V17Z" fill="${c2}"/>
-      </svg>
-      <img class="folder-cover" src="${coverUrl(p)}" alt="" loading="lazy">
-    </div>`;
+  return `<svg class="fsvg" viewBox="0 0 62 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M1 9C1 6.8 2.8 5 5 5H20L26 11H57C59.2 11 61 12.8 61 15V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V9Z" fill="${c1}"/>
+      <path d="M1 17H61V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V17Z" fill="${c2}"/>
+    </svg>`;
+}
+function folderInner(p, idxLabel){
+  return `${idxLabel ? `<span class="fidx">(${idxLabel})</span>` : ''}<div class="folder-ic">${folderSVG(p)}</div><div class="fname">${esc(p.title)}</div><div class="fmeta">${esc(p.cat)}</div>`;
 }
 function backBtn(from){
   const f = resolve(from);
@@ -1117,17 +1128,46 @@ function headBlock(p, from){
 /* ── viewers ── */
 const stageEl   = () => document.getElementById('pv-stage');
 const overlayEl = () => document.getElementById('pv-overlay');
-let bookTurn = null;
+let bookTurn = null;     // generic prev/next handler for the active viewer
+let slideStop = null;    // stops slideshow autoplay when leaving a view
 
-function renderGallery(p, from){
+function renderSlideshow(p, from){
   const list = []; for (let i=0;i<imgCount(p);i++) list.push(imgUrl(p,i));
-  stageEl().innerHTML = `<div class="pv-inner">${headBlock(p,from)}<div class="pv-grid" id="pv-grid"></div></div>`;
-  const grid = document.getElementById('pv-grid');
-  list.forEach((src,i)=>{
-    const im = new Image(); im.src = src; im.loading = 'lazy'; im.alt = '';
-    im.addEventListener('click', () => openZoom(list, i));
-    grid.appendChild(im);
-  });
+  stageEl().innerHTML = `<div class="pv-inner">${headBlock(p,from)}
+    <div class="pv-slideshow">
+      <div class="ss-stage">
+        <img class="ss-img ss-a is-on" alt="">
+        <img class="ss-img ss-b" alt="">
+      </div>
+      <div class="ss-cap"><span class="n"><b>${esc(p.title)}</b> &nbsp;·&nbsp; <span id="ss-idx">01</span> / ${String(list.length).padStart(2,'0')}</span></div>
+      <div class="pv-controls">
+        <button id="ss-prev">&lsaquo; Prev</button>
+        <button id="ss-auto">&#9654; Auto</button>
+        <button id="ss-next">Next &rsaquo;</button>
+      </div>
+    </div></div>`;
+  const a = stageEl().querySelector('.ss-a'), b = stageEl().querySelector('.ss-b');
+  let cur = 0, showingA = true, timer = null;
+  a.src = list[0];
+  function show(i){
+    cur = (i + list.length) % list.length;
+    const on = showingA ? b : a, off = showingA ? a : b;
+    on.src = list[cur];
+    on.classList.add('is-on'); off.classList.remove('is-on');
+    showingA = !showingA;
+    document.getElementById('ss-idx').textContent = String(cur+1).padStart(2,'0');
+  }
+  function nav(d){ show(cur + d); }
+  bookTurn = nav;
+  document.getElementById('ss-next').onclick = () => nav(1);
+  document.getElementById('ss-prev').onclick = () => nav(-1);
+  const stage = stageEl().querySelector('.ss-stage');
+  stage.style.cursor = 'pointer';
+  stage.addEventListener('click', e => { const r = stage.getBoundingClientRect(); nav(e.clientX - r.left > r.width/2 ? 1 : -1); });
+  const autoBtn = document.getElementById('ss-auto');
+  function stopAuto(){ if (timer){ clearInterval(timer); timer = null; autoBtn.innerHTML = '&#9654; Auto'; } }
+  autoBtn.onclick = () => { if (timer) stopAuto(); else { timer = setInterval(()=>nav(1), 3200); autoBtn.innerHTML = '&#10073;&#10073; Stop'; } };
+  slideStop = stopAuto;
 }
 function renderVideo(p, from){
   stageEl().innerHTML = `<div class="pv-inner">${headBlock(p,from)}<div class="pv-videos" id="pv-vids"></div></div>`;
@@ -1142,11 +1182,11 @@ function renderVideo(p, from){
 function renderFolder(p, from){
   stageEl().innerHTML = `<div class="pv-inner">${headBlock(p,from)}<div class="pv-subgrid" id="pv-subgrid"></div></div>`;
   const grid = document.getElementById('pv-subgrid');
-  p.children.forEach(cs=>{
+  p.children.forEach((cs,i)=>{
     const c = resolve(cs); if (!c) return;
     const el = document.createElement('div');
     el.className = 'pv-sub';
-    el.innerHTML = folderIconHTML(c) + `<div class="fname">${esc(c.title)}</div><div class="fmeta">${esc(c.cat)}</div>`;
+    el.innerHTML = folderInner(c, String(i+1).padStart(2,'0'));
     el.addEventListener('click', () => openProject(cs, p.slug));
     grid.appendChild(el);
   });
@@ -1169,14 +1209,12 @@ function initBook(imgs){
   const book = document.getElementById('pv-book'); if (!book) return;
   book.innerHTML = '';
   imgs.forEach((src,i)=>{
-    const nx = imgs[i+1];
     const pg = document.createElement('div');
     pg.className = 'page'; pg.style.zIndex = imgs.length - i;
+    // one image per leaf (spreads are already a single wide image); back is blank paper
     pg.innerHTML = `
       <div class="side front"><img src="${src}" loading="lazy" alt=""><span class="pagenum">${i+1}</span></div>
-      <div class="side back">${ nx
-          ? `<img src="${nx}" loading="lazy" alt=""><span class="pagenum">${i+2}</span>`
-          : `<div class="book-end">Fin</div>` }</div>`;
+      <div class="side back"></div>`;
     book.appendChild(pg);
   });
   const pages = [...book.querySelectorAll('.page')];
@@ -1203,18 +1241,92 @@ function initBook(imgs){
   render();
 }
 
+/* ── flip-card deck (戀愛陪審團) ── */
+function renderCards(p, from){
+  const list = []; for (let i=0;i<imgCount(p);i++) list.push(imgUrl(p,i));
+  stageEl().innerHTML = `<div class="pv-inner">${headBlock(p,from)}
+    <div class="pv-cards">
+      <div class="fc-card" id="fc-card"><img id="fc-img" alt=""></div>
+      <div class="pv-controls">
+        <button id="fc-prev">&lsaquo; Prev</button>
+        <span class="pv-counter" id="fc-counter"></span>
+        <button id="fc-next">Next &rsaquo;</button>
+      </div>
+      <div class="fc-hint">點卡片翻下一張 · ← → 方向鍵</div>
+    </div></div>`;
+  const card = document.getElementById('fc-card'), img = document.getElementById('fc-img');
+  const counter = document.getElementById('fc-counter');
+  let cur = 0, busy = false;
+  // preload neighbours for a smooth flip
+  function set(){ img.src = list[cur]; counter.textContent = `${cur+1} / ${list.length}`; }
+  function flip(d){
+    if (busy) return; busy = true;
+    const next = (cur + d + list.length) % list.length;
+    card.classList.add('flipping');
+    setTimeout(() => { cur = next; set(); card.classList.remove('flipping'); busy = false; }, 260);
+  }
+  bookTurn = flip;
+  card.addEventListener('click', () => flip(1));
+  document.getElementById('fc-next').onclick = () => flip(1);
+  document.getElementById('fc-prev').onclick = () => flip(-1);
+  set();
+}
+
+/* ── minou nail colour picker ── */
+function nailDisplaySVG(){
+  const nail = 'M0,-34 C 15,-34 21,-14 21,4 C 21,23 12,34 0,34 C -12,34 -21,23 -21,4 C -21,-14 -15,-34 0,-34 Z';
+  const gloss = 'M-9,-22 C -15,-12 -15,2 -10,12';
+  const tips = [[58,124,0.82,-24],[124,96,0.92,-12],[188,88,1.0,0],[252,96,0.92,12],[318,124,0.82,24]];
+  const g = tips.map(([x,y,s,r]) => `
+    <g transform="translate(${x},${y}) rotate(${r}) scale(${s})">
+      <path class="nail" d="${nail}"></path>
+      <path d="${gloss}" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="3" stroke-linecap="round"></path>
+    </g>`).join('');
+  return `<svg class="nail-hand" viewBox="0 0 376 190" fill="none" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
+}
+function renderNails(p, from){
+  const COLORS = ['#D94F70','#E27BA0','#C0455E','#B76E79','#E9A6B6','#8E4A6B','#5C4A72','#3C6E71','#A33B5B','#EFC05A','#2E2A2E','#F4F0EA'];
+  stageEl().innerHTML = `<div class="pv-inner">${headBlock(p,from)}
+    <div class="pv-nails">
+      ${nailDisplaySVG()}
+      <div class="swatches" id="nail-swatches"></div>
+      <div class="nail-label">點色卡換指甲色 · <b id="nail-name"></b></div>
+      <div class="pv-controls"><button id="nail-more">View the campaign &rsaquo;</button></div>
+    </div></div>`;
+  const nails = [...stageEl().querySelectorAll('.nail')];
+  const sw = document.getElementById('nail-swatches');
+  function apply(c, btn){
+    nails.forEach(n => n.style.fill = c);
+    sw.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    document.getElementById('nail-name').textContent = c.toUpperCase();
+  }
+  COLORS.forEach((c,i)=>{
+    const b = document.createElement('button');
+    b.className = 'swatch'; b.style.background = c; b.title = c;
+    b.onclick = () => apply(c, b);
+    sw.appendChild(b);
+  });
+  apply(COLORS[0], sw.firstChild);
+  document.getElementById('nail-more').onclick = () => renderSlideshow(p, from);
+}
+
 function openProject(slug, from){
   const p = resolve(slug); if (!p) return;
+  bookTurn = null; if (slideStop) { slideStop(); slideStop = null; }
   if (p.view === 'folder')        renderFolder(p, from);
   else if (p.view === 'flipbook') renderFlipbook(p, from);
   else if (p.view === 'video')    renderVideo(p, from);
-  else                            renderGallery(p, from);
+  else if (p.view === 'cards')    renderCards(p, from);
+  else if (p.view === 'nails')    renderNails(p, from);
+  else                            renderSlideshow(p, from);
   overlayEl().classList.add('open');
   document.body.style.overflow = 'hidden';
   stageEl().scrollTop = 0;
 }
 function closeProject(){
   overlayEl().classList.remove('open');
+  if (slideStop) { slideStop(); slideStop = null; }
   stageEl().innerHTML = '';
   bookTurn = null;
   document.body.style.overflow = '';
@@ -1267,19 +1379,7 @@ document.addEventListener('keydown', e => {
     el.style.top  = pos[1] + '%';
     el.style.setProperty('--base-rotate', `rotate(${rot})`);
     el.style.transform = `rotate(${rot})`;
-    const idx = String(i+1).padStart(2,'0');
-    el.innerHTML = `<div class="folder-card">
-        <div class="fc-top">
-          <span class="fidx">(${idx})</span>
-          <span class="fc-dot" style="background:${p.color[0]}"></span>
-        </div>
-        <svg class="fc-glyph" viewBox="0 0 40 30" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round">
-          <path d="M2 7 h11 l3 4 h22 v15 a2 2 0 0 1 -2 2 h-33 a2 2 0 0 1 -2 -2 v-19 a2 2 0 0 1 2 -2 z"/>
-        </svg>
-        <div class="fname">${esc(p.title)}</div>
-        <span class="fc-rule" style="background:${p.color[0]}"></span>
-        <div class="fmeta">${esc(p.cat)}</div>
-      </div>`;
+    el.innerHTML = folderInner(p, String(i+1).padStart(2,'0'));
     scene.appendChild(el);
   });
 })();
