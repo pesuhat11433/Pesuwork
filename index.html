@@ -797,6 +797,12 @@
   .b2-face.b2-full img { width: 100%; height: 100%; object-fit: contain; display: block; background: #fbfaf7; }
   .b2-half { background-size: 200% 100%; background-repeat: no-repeat; }
   .b2-blank { background: #fbfaf7; }
+  /* cover wall (other cover variations, below the book) */
+  .cover-wall { margin-top: 46px; width: 100%; }
+  .cw-label { text-align: center; font-size: 0.6rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink3); margin-bottom: 20px; }
+  .cw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px,1fr)); gap: 16px; max-width: 700px; margin: 0 auto; }
+  .cw-grid img { width: 100%; aspect-ratio: 3/4; object-fit: cover; border-radius: 3px; cursor: zoom-in; background: #26251f; box-shadow: 0 8px 22px rgba(0,0,0,0.34); transition: transform 0.2s; }
+  .cw-grid img:hover { transform: translateY(-4px); }
   .b2-spine { position: absolute; top: 0; bottom: 0; left: calc(50% - 22px); width: 44px; z-index: 40; pointer-events: none;
     background: linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.10) 44%, rgba(0,0,0,0.16) 50%, rgba(0,0,0,0.10) 56%, rgba(0,0,0,0) 100%); }
   /* gloss sweep as a leaf turns → sense of curvature */
@@ -1046,7 +1052,7 @@ const WB = 'works/';
 
 // Top-level folders scattered on the desktop scene
 const PROJECTS = [
-  { slug:'vinge',        title:'Vinge',            cat:'Fashion Magazine', count:21, view:'flipbook', color:['#8C7B6B','#B7A897'] },
+  { slug:'vinge',        title:'Vinge',            cat:'Fashion Magazine', count:21, view:'flipbook', coverCount:11, color:['#8C7B6B','#B7A897'] },
   { slug:'minou',        title:'minou nail',       cat:'Branding · DM',    count:12, view:'nails',    color:['#57BEB2','#96D9D0'] },
   { slug:'nius-cafe',    title:'Nius Cafe',        cat:'Space · Branding', count:21, view:'gallery',  color:['#D98C6A','#EBB79E'] },
   { slug:'illustration', title:'Illustration',     cat:'Illustration',     count:17, view:'gallery',  color:['#C9A24B','#E3C77E'] },
@@ -1212,7 +1218,11 @@ function renderFolder(p, from){
   });
 }
 function renderFlipbook(p, from){
-  const list = []; for (let i=0;i<imgCount(p);i++) list.push(imgUrl(p,i));
+  const all = []; for (let i=0;i<imgCount(p);i++) all.push(imgUrl(p,i));
+  const cc = p.coverCount || 0;
+  const wall = cc ? all.slice(1, cc) : [];        // cover variations → cover wall
+  const pages = cc ? all.slice(cc) : all;         // the magazine interior
+  const bookList = cc ? [all[0], ...pages] : all; // main cover + interior
   stageEl().innerHTML = `<div class="pv-inner">${headBlock(p,from)}
     <div class="pv-book-wrap">
       <div class="book2" id="pv-book">
@@ -1225,14 +1235,28 @@ function renderFlipbook(p, from){
         <button id="pv-next">Next &rsaquo;</button>
       </div>
       <div class="pv-flip-hint">點右半頁翻頁 · ← → 方向鍵</div>
-    </div></div>`;
-  // preload to learn each image's aspect ratio, then lay out a real two-page book
-  let loaded = 0; const dims = new Array(list.length);
-  list.forEach((src,i)=>{
+    </div>
+    ${ wall.length ? `<div class="cover-wall">
+        <div class="cw-label">Cover Variations</div>
+        <div class="cw-grid" id="cw-grid"></div>
+      </div>` : '' }
+  </div>`;
+  // cover wall → click opens the fullscreen viewer
+  if (wall.length){
+    const grid = document.getElementById('cw-grid');
+    wall.forEach((src,i)=>{
+      const im = new Image(); im.src = src; im.loading = 'lazy'; im.alt = '';
+      im.addEventListener('click', () => openZoom(wall, i));
+      grid.appendChild(im);
+    });
+  }
+  // preload the book images to learn aspect ratios, then lay out the two-page book
+  let loaded = 0; const dims = new Array(bookList.length);
+  bookList.forEach((src,i)=>{
     const im = new Image();
     im.onload = im.onerror = () => {
       dims[i] = (im.naturalWidth && im.naturalHeight) ? im.naturalWidth/im.naturalHeight : 0.75;
-      if (++loaded === list.length) buildBook2(list, dims);
+      if (++loaded === bookList.length) buildBook2(bookList, dims);
     };
     im.src = src;
   });
