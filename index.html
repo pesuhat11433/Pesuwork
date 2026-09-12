@@ -680,6 +680,123 @@
     .fade-in { opacity: 1; transform: none; transition: none; }
   }
 </style>
+<style>
+  /* ===== data-driven project folders ===== */
+  .works-scene { height: 720px; }
+  .sfolder .folder-icon {
+    position: relative; width: 116px; height: 92px; margin: 0 auto;
+  }
+  .sfolder .folder-icon .fsvg {
+    position: absolute; inset: 0; width: 116px; height: 92px;
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,0.12));
+  }
+  .sfolder .folder-cover {
+    position: absolute; left: 50%; top: 3px;
+    width: 62px; height: 62px; object-fit: cover;
+    transform: translateX(-50%) rotate(-4deg);
+    border: 3px solid #fff; border-radius: 3px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.22);
+    z-index: 2; background: #e7e5df;
+  }
+  .sfolder .fname {
+    font-size: 11px; color: var(--ink); font-weight: 600;
+    margin-top: 7px; font-family: var(--sans); max-width: 130px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-left: auto; margin-right: auto;
+  }
+  .sfolder .fmeta {
+    font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--ink3); margin-top: 2px; font-family: var(--sans);
+  }
+
+  /* ===== project viewer overlay ===== */
+  .pv-overlay { display: none; position: fixed; inset: 0; background: rgba(20,19,17,0.94); z-index: 9999; }
+  .pv-overlay.open { display: block; }
+  .pv-stage { position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .pv-inner { max-width: 1040px; margin: 0 auto; padding: 78px 24px 96px; color: var(--bg); }
+  .pv-close {
+    position: fixed; top: 18px; right: 20px; z-index: 10001;
+    width: 42px; height: 42px; border-radius: 50%;
+    border: 0.5px solid rgba(247,246,242,0.35); background: rgba(20,19,17,0.5);
+    color: #F7F6F2; font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: all 0.2s;
+  }
+  .pv-close:hover { background: #F7F6F2; color: #1C1B18; }
+
+  .pv-head { text-align: center; margin-bottom: 40px; position: relative; }
+  .pv-head .cat { font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink3); margin-bottom: 12px; }
+  .pv-head h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(2rem,5vw,3.4rem); line-height: 1.05; color: #F7F6F2; }
+  .pv-head .meta { font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink3); margin-top: 12px; }
+  .pv-back {
+    position: absolute; left: 0; top: 4px;
+    font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink3); background: none; border: 0.5px solid rgba(247,246,242,0.25);
+    border-radius: 999px; padding: 6px 14px; cursor: pointer; font-family: var(--sans); transition: all 0.2s;
+  }
+  .pv-back:hover { color: #F7F6F2; border-color: rgba(247,246,242,0.6); }
+
+  /* gallery masonry */
+  .pv-grid { columns: 2; column-gap: 14px; }
+  @media (min-width: 720px) { .pv-grid { columns: 3; } }
+  .pv-grid img {
+    width: 100%; margin: 0 0 14px; border-radius: 3px; display: block;
+    cursor: zoom-in; break-inside: avoid; background: #26251f; transition: opacity 0.2s, transform 0.2s;
+  }
+  .pv-grid img:hover { opacity: 0.86; }
+
+  /* folder-of-folders (niusnews) */
+  .pv-subgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 28px 18px; justify-items: center; }
+  .pv-sub { cursor: pointer; text-align: center; transition: transform 0.2s; }
+  .pv-sub:hover { transform: translateY(-4px); }
+
+  /* video */
+  .pv-videos { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 20px; }
+  .pv-videos video { width: 100%; border-radius: 4px; background: #000; display: block; }
+
+  /* flipbook */
+  .pv-book-wrap { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+  .book { position: relative; width: min(460px, 86vw); aspect-ratio: 3/4; perspective: 2600px; }
+  .book .page {
+    position: absolute; inset: 0; transform-style: preserve-3d; transform-origin: left center;
+    transition: transform 0.85s cubic-bezier(0.4,0.15,0.2,1); cursor: pointer; border-radius: 2px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.55);
+  }
+  .book .page.flipped { transform: rotateY(-180deg); }
+  .book .side { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; border-radius: 2px; background: #fff; }
+  .book .side.back { transform: rotateY(180deg); }
+  .book .side img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .book .side::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 30px; background: linear-gradient(90deg, rgba(0,0,0,0.2), transparent); pointer-events: none; }
+  .book .pagenum { position: absolute; bottom: 10px; right: 14px; font-size: 10px; color: #7a7870; background: rgba(255,255,255,0.8); padding: 1px 7px; border-radius: 99px; font-family: var(--sans); }
+  .book .book-end { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: var(--serif); font-style: italic; color: #bbb; font-size: 1.4rem; }
+  .pv-controls { display: flex; align-items: center; gap: 20px; }
+  .pv-controls button { font-family: var(--sans); font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; color: #F7F6F2; background: none; border: 0.5px solid rgba(247,246,242,0.3); border-radius: 999px; padding: 9px 20px; cursor: pointer; transition: all 0.2s; }
+  .pv-controls button:hover:not(:disabled) { background: #F7F6F2; color: #1C1B18; }
+  .pv-counter { font-size: 0.7rem; letter-spacing: 0.1em; color: var(--ink3); min-width: 60px; text-align: center; }
+  .pv-flip-hint { font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink3); }
+
+  /* fullscreen single-image zoom */
+  .pv-zoom { display: none; position: fixed; inset: 0; background: rgba(10,10,9,0.97); z-index: 10002; align-items: center; justify-content: center; padding: 34px; }
+  .pv-zoom.open { display: flex; }
+  .pv-zoom img { max-width: 95%; max-height: 92%; object-fit: contain; border-radius: 2px; }
+  .pv-zoom .zbtn { position: fixed; width: 46px; height: 46px; border-radius: 50%; border: 0.5px solid rgba(247,246,242,0.3); background: rgba(20,19,17,0.55); color: #fff; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .pv-zoom .zprev { left: 18px; top: 50%; transform: translateY(-50%); }
+  .pv-zoom .znext { right: 18px; top: 50%; transform: translateY(-50%); }
+  .pv-zoom .zclose { top: 18px; right: 20px; }
+
+  @media (max-width: 768px) {
+    .works-scene { height: 560px; }
+    .sfolder .folder-icon { width: 92px; height: 74px; }
+    .sfolder .folder-icon .fsvg { width: 92px; height: 74px; }
+    .sfolder .folder-cover { width: 50px; height: 50px; }
+    .sfolder .fname { font-size: 10px; }
+    .pv-inner { padding: 70px 16px 80px; }
+    .pv-back { position: static; display: inline-block; margin-bottom: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .book .page { transition: none; }
+  }
+</style>
 </head>
 <body>
 
@@ -835,107 +952,6 @@
         <button type="button" id="scene-reset">Reset</button>
       </div>
 
-      <!-- FILE: Mimiko illustration — top left -->
-      <div class="sfile" style="left:5%;top:7%;--base-rotate:rotate(-3deg);transform:rotate(-3deg)"
-           data-cat="illustration" data-id="0">
-        <img src="https://peggy-su-portfolio.netlify.app/illustration/dancemimi.jpg"
-             width="200" height="200" alt="Mimiko">
-        <div class="fname">illustration</div>
-      </div>
-
-      <!-- FILE: Starry Night — top center-left -->
-      <div class="sfile" style="left:24%;top:3%;--base-rotate:rotate(2deg);transform:rotate(2deg)"
-           data-cat="illustration" data-id="1">
-        <img src="https://peggy-su-portfolio.netlify.app/illustration/cp_iphone%206plus_1169x2102_pe2.jpg"
-             width="100" height="130" alt="Starry Night">
-        <div class="fname">illustration</div>
-      </div>
-
-      <!-- FILE: Meitu MZ Campaign — top right -->
-      <div class="sfile" style="right:4%;top:5%;--base-rotate:rotate(1deg);transform:rotate(1deg)"
-           data-cat="branding" data-id="2">
-        <img src="https://peggy-su-portfolio.netlify.app/branding/200B7094-985C-4BAE-A260-8FDD49A127E8.PNG"
-             width="130" height="98" alt="Meitu MZ Campaign">
-        <div class="fname">meitu</div>
-      </div>
-
-      <!-- FOLDER: social&posts — mid left -->
-      <div class="sfolder" style="left:2%;top:40%"
-           data-cat="social" data-id="folder-social">
-        <svg width="100" height="100" viewBox="0 0 62 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M1 9C1 6.8 2.8 5 5 5H20L26 11H57C59.2 11 61 12.8 61 15V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V9Z" fill="#F4A9C0"/>
-          <path d="M1 17H61V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V17Z" fill="#F7C4D4"/>
-        </svg>
-        <div class="fname">social&amp;posts</div>
-      </div>
-
-      <!-- FILE: Creator cover — mid center left -->
-      <div class="sfile" style="left:17%;top:52%;--base-rotate:rotate(-2deg);transform:rotate(-2deg)"
-           data-cat="social" data-id="3">
-        <img src="https://peggy-su-portfolio.netlify.app/social%20post/cover.jpg"
-             width="110" height="110" alt="Creator Cover">
-        <div class="fname">creator</div>
-      </div>
-
-      <!-- FILE: Q&A p1 — overlapping -->
-      <div class="sfile" style="left:28%;top:60%;--base-rotate:rotate(3deg);transform:rotate(3deg)"
-           data-cat="social" data-id="4">
-        <img src="https://peggy-su-portfolio.netlify.app/social%20post/p1.jpg"
-             width="95" height="95" alt="QA p1">
-        <div class="fname">jomo</div>
-      </div>
-
-      <!-- FOLDER: Branding — top right area -->
-      <div class="sfolder" style="right:22%;top:7%"
-           data-cat="branding" data-id="folder-branding">
-        <svg width="100" height="100" viewBox="0 0 62 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M1 9C1 6.8 2.8 5 5 5H20L26 11H57C59.2 11 61 12.8 61 15V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V9Z" fill="#7BAEF5"/>
-          <path d="M1 17H61V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V17Z" fill="#A8C8FF"/>
-        </svg>
-        <div class="fname">Branding&amp;Works</div>
-      </div>
-
-      <!-- FILE: creator banner — right side -->
-      <div class="sfile" style="right:3%;top:32%;--base-rotate:rotate(-2deg);transform:rotate(-2deg)"
-           data-cat="social" data-id="5">
-        <img src="https://peggy-su-portfolio.netlify.app/social%20post/l.jpg"
-             width="128" height="108" alt="Creator Banner">
-        <div class="fname">social post</div>
-      </div>
-
-      <!-- FILE: Q&A p2 bottom center -->
-      <div class="sfile" style="left:36%;bottom:9%;--base-rotate:rotate(-2deg);transform:rotate(-2deg)"
-           data-cat="social" data-id="6">
-        <img src="https://peggy-su-portfolio.netlify.app/social%20post/p2.jpg"
-             width="100" height="100" alt="QA p2">
-        <div class="fname">qa-creative.jpg</div>
-      </div>
-
-      <!-- FILE: Q&A p3 overlapping -->
-      <div class="sfile" style="left:46%;bottom:13%;--base-rotate:rotate(3deg);transform:rotate(3deg)"
-           data-cat="social" data-id="7">
-        <img src="https://peggy-su-portfolio.netlify.app/social%20post/p3.jpg"
-             width="100" height="100" alt="QA p3">
-        <div class="fname">qa-memorable.jpg</div>
-      </div>
-
-      <!-- FILE: Meitu creative — bottom right -->
-      <div class="sfile" style="right:4%;bottom:7%;--base-rotate:rotate(1deg);transform:rotate(1deg)"
-           data-cat="social" data-id="8">
-        <img src="https://peggy-su-portfolio.netlify.app/social%20post/p8.jpg"
-             width="120" height="120" alt="Meitu Creative">
-        <div class="fname">meitu-creative.jpg</div>
-      </div>
-
-      <!-- FOLDER: illustration — bottom right -->
-      <div class="sfolder" style="right:17%;bottom:10%"
-           data-cat="illustration" data-id="folder-illustration">
-        <svg width="100" height="100" viewBox="0 0 62 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M1 9C1 6.8 2.8 5 5 5H20L26 11H57C59.2 11 61 12.8 61 15V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V9Z" fill="#A8D5A2"/>
-          <path d="M1 17H61V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V17Z" fill="#C5E8C0"/>
-        </svg>
-        <div class="fname">Illustration</div>
-      </div>
 
     </div><!-- /works-scene -->
   </section>
@@ -962,22 +978,18 @@
 
 </div>
 
-<!-- LIGHTBOX -->
-<div class="lb-overlay" id="lb-overlay">
-  <div class="lb-box">
-    <div class="lb-head">
-      <div>
-        <div class="lb-cat" id="lb-cat"></div>
-        <div class="lb-title" id="lb-title"></div>
-      </div>
-      <button class="lb-close" id="lb-close">&#x2715;</button>
-    </div>
-    <div class="lb-body">
-      <p class="lb-desc" id="lb-desc"></p>
-      <div class="lb-imgs" id="lb-imgs"></div>
-      <div class="lb-tags" id="lb-tags"></div>
-    </div>
-  </div>
+<!-- PROJECT VIEWER -->
+<div class="pv-overlay" id="pv-overlay" aria-hidden="true">
+  <button class="pv-close" id="pv-close" aria-label="Close">&#x2715;</button>
+  <div class="pv-stage" id="pv-stage"></div>
+</div>
+
+<!-- FULLSCREEN IMAGE ZOOM -->
+<div class="pv-zoom" id="pv-zoom" aria-hidden="true">
+  <button class="zbtn zclose" id="z-close" aria-label="Close">&#x2715;</button>
+  <button class="zbtn zprev" id="z-prev" aria-label="Previous">&#8249;</button>
+  <img id="z-img" src="" alt="">
+  <button class="zbtn znext" id="z-next" aria-label="Next">&#8250;</button>
 </div>
 
 <script>
@@ -995,195 +1007,314 @@ const navLinks  = document.getElementById('nav-links');
 hamburger.addEventListener('click', () => navLinks.classList.toggle('open'));
 function closeMenu() { navLinks.classList.remove('open'); }
 
-/* ── works data ── */
-const B = 'https://peggy-su-portfolio.netlify.app';
-const WORKS = {
-  0: { cat:'Illustration', title:'Mimiko — Queen of Dance',
-       desc:'Character illustration for Meitu\'s creator community. Expressive line work with playful poses capturing energy and personality.',
-       imgs:[B+'/illustration/dancemimi.jpg'],
-       tags:['Character Design','Illustration','Mascot'] },
-  1: { cat:'Illustration', title:'Starry Night Girl',
-       desc:'Editorial illustration exploring a dreamy nighttime aesthetic. Developed as part of an in-app themed content series for Meitu.',
-       imgs:[B+'/illustration/cp_iphone%206plus_1169x2102_pe2.jpg'],
-       tags:['Illustration','Editorial','In-App Content'] },
-  2: { cat:'Branding', title:'Meitu MZ Campaign',
-       desc:'Brand campaign targeting Gen-Z users across Japan and Korea markets. Visual identity balancing global brand direction with local aesthetic preferences.',
-       imgs:[B+'/branding/200B7094-985C-4BAE-A260-8FDD49A127E8.PNG'],
-       tags:['Brand Strategy','Campaign Design','Japan','Korea'] },
-  3: { cat:'Social Post', title:'Creator Spotlight — Cover',
-       desc:'Series cover for Meitu\'s Creator Spotlight — a social content program celebrating the platform\'s creator community with editorial typography.',
-       imgs:[B+'/social%20post/cover.jpg', B+'/social%20post/l.jpg'],
-       tags:['Social Media','Art Direction','Series Design'] },
-  4: { cat:'Social Post', title:'Q&A — Inspiration',
-       desc:'Q&A editorial post exploring creative inspiration. Part of a 10-post social series with consistent visual identity across platforms.',
-       imgs:[B+'/social%20post/p1.jpg', B+'/social%20post/p2.jpg', B+'/social%20post/p3.jpg'],
-       tags:['Social Media','Editorial','Q&A Series'] },
-  5: { cat:'Social Post', title:'Creator Spotlight — Banner',
-       desc:'Horizontal banner format for cross-platform distribution. Adapts the series visual identity for feed and story placements.',
-       imgs:[B+'/social%20post/l.jpg', B+'/social%20post/cover.jpg'],
-       tags:['Social Media','Banner Design','Brand System'] },
-  6: { cat:'Social Post', title:'Q&A — Creative Habits',
-       desc:'Visual Q&A exploring a creator\'s creative habits and daily practice. Clean typographic layout with structured editorial design.',
-       imgs:[B+'/social%20post/p2.jpg', B+'/social%20post/p4.jpg', B+'/social%20post/p5.jpg'],
-       tags:['Social Post','Typography','Editorial'] },
-  7: { cat:'Social Post', title:'Q&A — Memorable Work',
-       desc:'Creator story post focusing on the most memorable project in a creator\'s career. Part of the ongoing Creator Spotlight series.',
-       imgs:[B+'/social%20post/p3.jpg', B+'/social%20post/p6.jpg'],
-       tags:['Social Post','Creator Story','Series'] },
-  8: { cat:'Social Post', title:'Meitu Creative Project',
-       desc:'Campaign post for Meitu\'s in-house creative initiative. Art-directed visual content showcasing platform capabilities and creator output.',
-       imgs:[B+'/social%20post/p8.jpg', B+'/social%20post/p10.jpg', B+'/social%20post/p10-1.jpg'],
-       tags:['Campaign','Creative Direction','Meitu'] },
-  'folder-social': { cat:'Social Post', title:'Social & Posts — Full Series',
-       desc:'All social media posts and creator-series content produced for Meitu across Japan, Korea, and Taiwan markets. A 10+ post editorial series with unified visual language.',
-       imgs:[B+'/social%20post/cover.jpg',B+'/social%20post/l.jpg',B+'/social%20post/p1.jpg',B+'/social%20post/p2.jpg',B+'/social%20post/p3.jpg',B+'/social%20post/p4.jpg',B+'/social%20post/p5.jpg',B+'/social%20post/p6.jpg',B+'/social%20post/p8.jpg',B+'/social%20post/p10.jpg',B+'/social%20post/p10-1.jpg'],
-       tags:['Social Media','Series Design','Content Strategy','Art Direction'] },
-  'folder-branding': { cat:'Branding', title:'Branding & Works',
-       desc:'Brand campaigns, visual identity systems, and campaign design across Meitu, Jomo Corp., and partner brands. Strategy-led creative for APAC markets with measurable outcomes.',
-       imgs:[B+'/branding/200B7094-985C-4BAE-A260-8FDD49A127E8.PNG'],
-       tags:['Brand Strategy','Campaign Design','Visual Identity','APAC'] },
-  'folder-illustration': { cat:'Illustration', title:'Illustration',
-       desc:'Character illustration and editorial art created for in-app content, mascot design, and creative community programs across Meitu\'s global markets.',
-       imgs:[B+'/illustration/dancemimi.jpg', B+'/illustration/cp_iphone%206plus_1169x2102_pe2.jpg'],
-       tags:['Illustration','Character Design','Editorial','In-App Content'] }
+/* ── works data (data-driven portfolio) ── */
+const WB = 'works/';
+
+// Top-level folders scattered on the desktop scene
+const PROJECTS = [
+  { slug:'vinge',        title:'Vinge',            cat:'Fashion Magazine', count:22, view:'flipbook', color:['#8C7B6B','#B7A897'] },
+  { slug:'minou',        title:'minou nail',       cat:'Branding · DM',    count:12, view:'gallery',  color:['#57BEB2','#96D9D0'] },
+  { slug:'nius-cafe',    title:'Nius Cafe',        cat:'Space · Branding', count:21, view:'gallery',  color:['#D98C6A','#EBB79E'] },
+  { slug:'illustration', title:'Illustration',     cat:'Illustration',     count:17, view:'gallery',  color:['#C9A24B','#E3C77E'] },
+  { slug:'oshare',       title:'Oshare',           cat:'Editorial',        count:6,  view:'gallery',  color:['#B98BD1','#D6B6E6'] },
+  { slug:'space',        title:'Space',            cat:'Editorial',        count:7,  view:'gallery',  color:['#7FB07A','#AFD3AB'] },
+  { slug:'cabin-crew',   title:'空姐 Cabin Crew',  cat:'Editorial',        count:8,  view:'gallery',  color:['#6FA8C7','#A2CBE0'] },
+  { slug:'perfect',      title:'Perfect Corp — AR',cat:'Motion · AR',      count:6,  view:'video',    color:['#C36A78','#E29AA5'] },
+  { slug:'web',          title:'Web',              cat:'Web Design',       count:2,  view:'gallery',  color:['#6C7B8A','#9AAAB8'] },
+  { slug:'ah',           title:'AH',               cat:'Layout',           count:1,  view:'gallery',  color:['#9A9488','#C2BCAF'] },
+  { slug:'niusnews',     title:'Niusnews',         cat:'Media · Branding', view:'folder', color:['#E2A0B4','#F2C6D3'],
+      children:['love-jury','holoscope','leopard-weekly','niusnews-event','niu-market','niusnews-vis'] },
+  { slug:'meitu-creative', title:'Meitu Creative', cat:'Social · Campaign', view:'gallery', color:['#E0679A','#F0A6C4'],
+      base:'https://peggy-su-portfolio.netlify.app/social%20post/',
+      files:['cover.jpg','l.jpg','p1.jpg','p2.jpg','p3.jpg','p4.jpg','p5.jpg','p6.jpg','p8.jpg','p10.jpg','p10-1.jpg'] }
+];
+
+// Sub-projects inside the Niusnews folder
+const CHILD = {
+  'love-jury':      { title:'戀愛陪審團',      cat:'Editorial IP',   count:53, view:'gallery', color:['#E58BA6','#F4B8C9'] },
+  'holoscope':      { title:'Holoscope 星座',  cat:'Editorial IP',   count:12, view:'gallery', color:['#7E86D6','#AEB4EC'] },
+  'leopard-weekly': { title:'豹寶週報',        cat:'Editorial',      count:27, view:'gallery', color:['#D8A94E','#ECCB86'] },
+  'niusnews-event': { title:'Niusnews Events', cat:'Event',          count:19, view:'gallery', color:['#E2A0B4','#F2C6D3'] },
+  'niu-market':     { title:'妞市集',          cat:'Event · Branding',count:4, view:'gallery', color:['#E8B04B','#F3CE86'] },
+  'niusnews-vis':   { title:'Niusnews VIS',    cat:'Brand Identity', count:3,  view:'gallery', color:['#B0A0C8','#D3C7E4'] }
 };
 
-/* ── lightbox ── */
-const overlay = document.getElementById('lb-overlay');
+// scatter positions (left%, top%) around the centre title
+const POS = [
+  [3,6],[22,2],[41,7],[60,2],[79,7],
+  [84,33],[2,37],[3,63],[24,71],[46,73],[66,70],[82,56]
+];
 
-function openLB(id) {
-  const d = WORKS[id];
-  if (!d) return;
-  document.getElementById('lb-cat').textContent   = d.cat;
-  document.getElementById('lb-title').textContent = d.title;
-  document.getElementById('lb-desc').textContent  = d.desc;
-  document.getElementById('lb-imgs').innerHTML    = d.imgs.map(s => `<img src="${s}" alt="" loading="lazy">`).join('');
-  document.getElementById('lb-tags').innerHTML    = d.tags.map(t => `<span class="lb-tag">${t}</span>`).join('');
-  overlay.classList.add('open');
-  document.body.style.overflow = 'hidden';
+// registry
+const ALL = {};
+PROJECTS.forEach(p => ALL[p.slug] = p);
+Object.entries(CHILD).forEach(([s,o]) => { o.slug = s; ALL[s] = o; });
+const resolve = s => ALL[s];
+
+const pad = n => String(n).padStart(2,'0');
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const imgCount = p => p.files ? p.files.length : (p.count || 0);
+const imgUrl   = (p,i) => p.files ? p.base + p.files[i] : `${WB}${p.slug}/${p.slug}-${pad(i+1)}.jpg`;
+const coverUrl = p => {
+  if (p.children && p.children.length) { const c = ALL[p.children[0]]; if (c) return `${WB}${c.slug}/${c.slug}-cover.jpg`; }
+  return p.files ? p.base + p.files[0] : `${WB}${p.slug}/${p.slug}-cover.jpg`;
+};
+const vidUrl   = (p,i) => `${WB}${p.slug}/${p.slug}-${pad(i+1)}.mp4`;
+const posterUrl= (p,i) => `${WB}${p.slug}/${p.slug}-poster-${pad(i+1)}.jpg`;
+
+function metaLine(p){
+  if (p.view === 'flipbook') return `Magazine · ${imgCount(p)} pages`;
+  if (p.view === 'video')    return `${p.count} clips`;
+  if (p.view === 'folder')   return `${p.children.length} projects`;
+  return `${imgCount(p)} ${imgCount(p) > 1 ? 'images' : 'image'}`;
 }
-function closeLB() {
-  overlay.classList.remove('open');
+function folderIconHTML(p){
+  const [c1,c2] = p.color;
+  return `<div class="folder-icon">
+      <svg class="fsvg" viewBox="0 0 62 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M1 9C1 6.8 2.8 5 5 5H20L26 11H57C59.2 11 61 12.8 61 15V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V9Z" fill="${c1}"/>
+        <path d="M1 17H61V45C61 47.2 59.2 49 57 49H5C2.8 49 1 47.2 1 45V17Z" fill="${c2}"/>
+      </svg>
+      <img class="folder-cover" src="${coverUrl(p)}" alt="" loading="lazy">
+    </div>`;
+}
+function backBtn(from){
+  const f = resolve(from);
+  return `<button class="pv-back" onclick="openProject('${from}')">&lsaquo; ${esc(f ? f.title : 'Back')}</button>`;
+}
+function headBlock(p, from){
+  return `<div class="pv-head">${from ? backBtn(from) : ''}
+    <div class="cat">${esc(p.cat)}</div>
+    <h2>${esc(p.title)}</h2>
+    <div class="meta">${metaLine(p)}</div>
+  </div>`;
+}
+
+/* ── viewers ── */
+const stageEl   = () => document.getElementById('pv-stage');
+const overlayEl = () => document.getElementById('pv-overlay');
+let bookTurn = null;
+
+function renderGallery(p, from){
+  const list = []; for (let i=0;i<imgCount(p);i++) list.push(imgUrl(p,i));
+  stageEl().innerHTML = `<div class="pv-inner">${headBlock(p,from)}<div class="pv-grid" id="pv-grid"></div></div>`;
+  const grid = document.getElementById('pv-grid');
+  list.forEach((src,i)=>{
+    const im = new Image(); im.src = src; im.loading = 'lazy'; im.alt = '';
+    im.addEventListener('click', () => openZoom(list, i));
+    grid.appendChild(im);
+  });
+}
+function renderVideo(p, from){
+  stageEl().innerHTML = `<div class="pv-inner">${headBlock(p,from)}<div class="pv-videos" id="pv-vids"></div></div>`;
+  const box = document.getElementById('pv-vids');
+  for (let i=0;i<p.count;i++){
+    const v = document.createElement('video');
+    v.src = vidUrl(p,i); v.poster = posterUrl(p,i);
+    v.controls = true; v.playsInline = true; v.preload = 'metadata'; v.loop = true;
+    box.appendChild(v);
+  }
+}
+function renderFolder(p, from){
+  stageEl().innerHTML = `<div class="pv-inner">${headBlock(p,from)}<div class="pv-subgrid" id="pv-subgrid"></div></div>`;
+  const grid = document.getElementById('pv-subgrid');
+  p.children.forEach(cs=>{
+    const c = resolve(cs); if (!c) return;
+    const el = document.createElement('div');
+    el.className = 'pv-sub';
+    el.innerHTML = folderIconHTML(c) + `<div class="fname">${esc(c.title)}</div><div class="fmeta">${esc(c.cat)}</div>`;
+    el.addEventListener('click', () => openProject(cs, p.slug));
+    grid.appendChild(el);
+  });
+}
+function renderFlipbook(p, from){
+  const list = []; for (let i=0;i<imgCount(p);i++) list.push(imgUrl(p,i));
+  stageEl().innerHTML = `<div class="pv-inner">${headBlock(p,from)}
+    <div class="pv-book-wrap">
+      <div class="book" id="pv-book"></div>
+      <div class="pv-controls">
+        <button id="pv-prev">&lsaquo; Prev</button>
+        <span class="pv-counter" id="pv-counter"></span>
+        <button id="pv-next">Next &rsaquo;</button>
+      </div>
+      <div class="pv-flip-hint">點頁面右側翻頁 · ← → 方向鍵</div>
+    </div></div>`;
+  initBook(list);
+}
+function initBook(imgs){
+  const book = document.getElementById('pv-book'); if (!book) return;
+  book.innerHTML = '';
+  imgs.forEach((src,i)=>{
+    const nx = imgs[i+1];
+    const pg = document.createElement('div');
+    pg.className = 'page'; pg.style.zIndex = imgs.length - i;
+    pg.innerHTML = `
+      <div class="side front"><img src="${src}" loading="lazy" alt=""><span class="pagenum">${i+1}</span></div>
+      <div class="side back">${ nx
+          ? `<img src="${nx}" loading="lazy" alt=""><span class="pagenum">${i+2}</span>`
+          : `<div class="book-end">Fin</div>` }</div>`;
+    book.appendChild(pg);
+  });
+  const pages = [...book.querySelectorAll('.page')];
+  let cur = 0;
+  const counter = document.getElementById('pv-counter');
+  function render(){
+    pages.forEach((p,i)=>{ const f = i < cur; p.classList.toggle('flipped',f); p.style.zIndex = f ? i : imgs.length - i; });
+    counter.textContent = `${Math.min(cur+1,imgs.length)} / ${imgs.length}`;
+    document.getElementById('pv-prev').disabled = cur === 0;
+    document.getElementById('pv-next').disabled = cur >= imgs.length - 1;
+  }
+  function turn(d){ cur = Math.max(0, Math.min(imgs.length-1, cur+d)); render(); }
+  bookTurn = turn;
+  book.addEventListener('click', e => { const r = book.getBoundingClientRect(); turn(e.clientX - r.left > r.width/2 ? 1 : -1); });
+  document.getElementById('pv-next').onclick = () => turn(1);
+  document.getElementById('pv-prev').onclick = () => turn(-1);
+  render();
+}
+
+function openProject(slug, from){
+  const p = resolve(slug); if (!p) return;
+  if (p.view === 'folder')        renderFolder(p, from);
+  else if (p.view === 'flipbook') renderFlipbook(p, from);
+  else if (p.view === 'video')    renderVideo(p, from);
+  else                            renderGallery(p, from);
+  overlayEl().classList.add('open');
+  document.body.style.overflow = 'hidden';
+  stageEl().scrollTop = 0;
+}
+function closeProject(){
+  overlayEl().classList.remove('open');
+  stageEl().innerHTML = '';
+  bookTurn = null;
   document.body.style.overflow = '';
 }
+document.getElementById('pv-close').addEventListener('click', closeProject);
 
-document.getElementById('lb-close').addEventListener('click', closeLB);
-overlay.addEventListener('click', e => { if (e.target === overlay) closeLB(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLB(); });
+/* ── fullscreen image zoom ── */
+let zoomList = [], zoomIdx = 0;
+function openZoom(list, idx){
+  zoomList = list; zoomIdx = idx;
+  document.getElementById('z-img').src = list[idx];
+  document.getElementById('pv-zoom').classList.add('open');
+}
+function zoomNav(d){
+  if (!zoomList.length) return;
+  zoomIdx = (zoomIdx + d + zoomList.length) % zoomList.length;
+  document.getElementById('z-img').src = zoomList[zoomIdx];
+}
+function closeZoom(){ document.getElementById('pv-zoom').classList.remove('open'); }
+document.getElementById('z-close').addEventListener('click', closeZoom);
+document.getElementById('z-prev').addEventListener('click', e => { e.stopPropagation(); zoomNav(-1); });
+document.getElementById('z-next').addEventListener('click', e => { e.stopPropagation(); zoomNav(1); });
+document.getElementById('pv-zoom').addEventListener('click', e => { if (e.target.id === 'pv-zoom') closeZoom(); });
+
+/* ── keyboard ── */
+document.addEventListener('keydown', e => {
+  if (document.getElementById('pv-zoom').classList.contains('open')){
+    if (e.key === 'Escape') closeZoom();
+    else if (e.key === 'ArrowRight') zoomNav(1);
+    else if (e.key === 'ArrowLeft')  zoomNav(-1);
+    return;
+  }
+  if (overlayEl().classList.contains('open')){
+    if (e.key === 'Escape') { closeProject(); return; }
+    if (bookTurn){ if (e.key === 'ArrowRight') bookTurn(1); if (e.key === 'ArrowLeft') bookTurn(-1); }
+  }
+});
+
+/* ── build the scene ── */
+(function buildScene(){
+  const scene = document.getElementById('works-scene');
+  if (!scene) return;
+  PROJECTS.forEach((p,i)=>{
+    const el = document.createElement('div');
+    el.className = 'sfolder';
+    el.dataset.slug = p.slug;
+    const pos = POS[i] || [10 + (i*6)%70, 10];
+    el.style.left = pos[0] + '%';
+    el.style.top  = pos[1] + '%';
+    el.innerHTML = folderIconHTML(p) + `<div class="fname">${esc(p.title)}</div><div class="fmeta">${esc(p.cat)}</div>`;
+    scene.appendChild(el);
+  });
+})();
 
 /* ── draggable works scene ── */
 (function () {
   const scene = document.getElementById('works-scene');
   if (!scene) return;
   const items = [...scene.querySelectorAll('.sfile, .sfolder')];
-  const STORE_KEY = 'pesu_works_layout_v1';
-  const CLICK_THRESHOLD = 6; // px of movement below which it counts as a click
+  const STORE_KEY = 'pesu_works_layout_v2';
+  const CLICK_THRESHOLD = 6;
 
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); } catch (e) { saved = {}; }
+  const defaults = {};
+  const keyOf = el => el.dataset.slug || el.dataset.id;
 
-  const defaults = {}; // id -> {leftPct, topPct}
-
-  // Convert each item from its CSS anchor (left/right/top/bottom + %) to
-  // absolute left/top pixels, so every item drags with the same math.
   function normalize() {
     items.forEach(el => {
-      const id = el.dataset.id;
-      const left = el.offsetLeft;
-      const top = el.offsetTop;
-      el.style.left = left + 'px';
-      el.style.top = top + 'px';
-      el.style.right = 'auto';
-      el.style.bottom = 'auto';
-      defaults[id] = { leftPct: left / scene.clientWidth, topPct: top / scene.clientHeight };
+      const left = el.offsetLeft, top = el.offsetTop;
+      el.style.left = left + 'px'; el.style.top = top + 'px';
+      el.style.right = 'auto'; el.style.bottom = 'auto';
+      defaults[keyOf(el)] = { leftPct: left / scene.clientWidth, topPct: top / scene.clientHeight };
     });
   }
-
   function applyLayout(layout) {
     const W = scene.clientWidth, H = scene.clientHeight;
     items.forEach(el => {
-      const pos = layout[el.dataset.id];
-      if (!pos) return;
-      const maxL = Math.max(0, W - el.offsetWidth);
-      const maxT = Math.max(0, H - el.offsetHeight);
+      const pos = layout[keyOf(el)]; if (!pos) return;
+      const maxL = Math.max(0, W - el.offsetWidth), maxT = Math.max(0, H - el.offsetHeight);
       el.style.left = Math.min(Math.max(pos.leftPct * W, 0), maxL) + 'px';
-      el.style.top = Math.min(Math.max(pos.topPct * H, 0), maxT) + 'px';
+      el.style.top  = Math.min(Math.max(pos.topPct * H, 0), maxT) + 'px';
     });
   }
-
   function persist() {
-    const layout = {};
-    const W = scene.clientWidth, H = scene.clientHeight;
-    items.forEach(el => {
-      layout[el.dataset.id] = {
-        leftPct: parseFloat(el.style.left) / W,
-        topPct: parseFloat(el.style.top) / H
-      };
-    });
+    const layout = {}, W = scene.clientWidth, H = scene.clientHeight;
+    items.forEach(el => { layout[keyOf(el)] = { leftPct: parseFloat(el.style.left)/W, topPct: parseFloat(el.style.top)/H }; });
     try { localStorage.setItem(STORE_KEY, JSON.stringify(layout)); } catch (e) {}
   }
 
   normalize();
   if (Object.keys(saved).length) applyLayout(saved);
 
-  // Drag handling (pointer events → mouse + touch unified)
   items.forEach(el => {
-    let startX = 0, startY = 0, origLeft = 0, origTop = 0, moved = false, dragging = false;
-
+    let startX=0, startY=0, origLeft=0, origTop=0, moved=false, dragging=false;
     el.addEventListener('pointerdown', e => {
-      if (e.button != null && e.button !== 0) return; // left / touch only
-      dragging = true;
-      moved = false;
-      startX = e.clientX;
-      startY = e.clientY;
+      if (e.button != null && e.button !== 0) return;
+      dragging = true; moved = false;
+      startX = e.clientX; startY = e.clientY;
       origLeft = parseFloat(el.style.left) || el.offsetLeft;
-      origTop = parseFloat(el.style.top) || el.offsetTop;
+      origTop  = parseFloat(el.style.top)  || el.offsetTop;
       try { el.setPointerCapture(e.pointerId); } catch (err) {}
     });
-
     el.addEventListener('pointermove', e => {
       if (!dragging) return;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      if (!moved && Math.hypot(dx, dy) > CLICK_THRESHOLD) {
-        moved = true;
-        el.classList.add('dragging');
-      }
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      if (!moved && Math.hypot(dx,dy) > CLICK_THRESHOLD) { moved = true; el.classList.add('dragging'); }
       if (!moved) return;
       e.preventDefault();
-      const maxL = Math.max(0, scene.clientWidth - el.offsetWidth);
-      const maxT = Math.max(0, scene.clientHeight - el.offsetHeight);
+      const maxL = Math.max(0, scene.clientWidth - el.offsetWidth), maxT = Math.max(0, scene.clientHeight - el.offsetHeight);
       el.style.left = Math.min(Math.max(origLeft + dx, 0), maxL) + 'px';
-      el.style.top = Math.min(Math.max(origTop + dy, 0), maxT) + 'px';
+      el.style.top  = Math.min(Math.max(origTop + dy, 0), maxT) + 'px';
     });
-
     function endDrag(e) {
       if (!dragging) return;
       dragging = false;
       try { el.releasePointerCapture(e.pointerId); } catch (err) {}
-      if (moved) {
-        el.classList.remove('dragging');
-        persist();
-      } else {
-        openLB(el.dataset.id); // treat as a click
-      }
+      if (moved) { el.classList.remove('dragging'); persist(); }
+      else { openProject(keyOf(el)); }
     }
     el.addEventListener('pointerup', endDrag);
     el.addEventListener('pointercancel', endDrag);
-    // keep native dragstart (image ghost) from interfering
     el.addEventListener('dragstart', e => e.preventDefault());
   });
 
-  // Reset button → clear saved layout, restore defaults
   const resetBtn = document.getElementById('scene-reset');
-  if (resetBtn) {
-    resetBtn.addEventListener('click', () => {
-      try { localStorage.removeItem(STORE_KEY); } catch (e) {}
-      applyLayout(defaults);
-    });
-  }
+  if (resetBtn) resetBtn.addEventListener('click', () => {
+    try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+    applyLayout(defaults);
+  });
 
-  // Re-fit saved layout on resize so items stay in bounds
   let rt;
   window.addEventListener('resize', () => {
     clearTimeout(rt);
