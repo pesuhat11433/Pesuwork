@@ -1120,8 +1120,18 @@ const PROJECTS = [
   { slug:'niusnews',     title:'Niusnews',         cat:'Media · Branding', view:'folder', color:['#E2A0B4','#F2C6D3'],
       children:['love-jury','holoscope','leopard-weekly','niusnews-event','niu-market','niusnews-vis'] },
   { slug:'meitu-creative', title:'Meitu Creative', cat:'Social · Campaign', view:'gallery', color:['#E0679A','#F0A6C4'],
-      base:'https://peggy-su-portfolio.netlify.app/social%20post/',
-      files:['cover.jpg','l.jpg','p1.jpg','p2.jpg','p3.jpg','p4.jpg','p5.jpg','p6.jpg','p8.jpg','p10.jpg','p10-1.jpg'] }
+      list:['works/meitu-creative/meitu-cover.jpg',
+        'https://peggy-su-portfolio.netlify.app/social%20post/cover.jpg',
+        'https://peggy-su-portfolio.netlify.app/social%20post/l.jpg',
+        'https://peggy-su-portfolio.netlify.app/social%20post/p1.jpg',
+        'https://peggy-su-portfolio.netlify.app/social%20post/p2.jpg',
+        'https://peggy-su-portfolio.netlify.app/social%20post/p3.jpg',
+        'https://peggy-su-portfolio.netlify.app/social%20post/p4.jpg',
+        'https://peggy-su-portfolio.netlify.app/social%20post/p5.jpg',
+        'https://peggy-su-portfolio.netlify.app/social%20post/p6.jpg',
+        'https://peggy-su-portfolio.netlify.app/social%20post/p8.jpg',
+        'https://peggy-su-portfolio.netlify.app/social%20post/p10.jpg',
+        'https://peggy-su-portfolio.netlify.app/social%20post/p10-1.jpg'] }
 ];
 
 // Sub-projects inside the Niusnews folder
@@ -1158,10 +1168,11 @@ const resolve = s => ALL[s];
 
 const pad = n => String(n).padStart(2,'0');
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const imgCount = p => p.files ? p.files.length : (p.count || 0);
-const imgUrl   = (p,i) => p.files ? p.base + p.files[i] : `${WB}${p.slug}/${p.slug}-${pad(i+1)}.jpg`;
+const imgCount = p => p.list ? p.list.length : (p.files ? p.files.length : (p.count || 0));
+const imgUrl   = (p,i) => p.list ? p.list[i] : (p.files ? p.base + p.files[i] : `${WB}${p.slug}/${p.slug}-${pad(i+1)}.jpg`);
 const coverUrl = p => {
   if (p.children && p.children.length) { const c = ALL[p.children[0]]; if (c) return `${WB}${c.slug}/${c.slug}-cover.jpg`; }
+  if (p.list) return p.list[0];
   return p.files ? p.base + p.files[0] : `${WB}${p.slug}/${p.slug}-cover.jpg`;
 };
 const vidUrl   = (p,i) => `${WB}${p.slug}/${p.slug}-${pad(i+1)}.mp4`;
