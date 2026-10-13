@@ -1692,6 +1692,20 @@ document.addEventListener('keydown', e => {
     }, 150);
   });
 })();
+
+/* ── deep link: open a project from the URL, e.g. #ai-video ── */
+(function(){
+  function openFromHash(){
+    const s = decodeURIComponent(location.hash.slice(1));
+    if (s && ALL[s]) {
+      const w = document.getElementById('works');
+      if (w) w.scrollIntoView();
+      openProject(s);
+    }
+  }
+  window.addEventListener('load', openFromHash);
+  window.addEventListener('hashchange', openFromHash);
+})();
 </script>
 </body>
 </html>
