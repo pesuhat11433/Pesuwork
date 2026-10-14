@@ -1133,7 +1133,17 @@ const PROJECTS = [
         'https://peggy-su-portfolio.netlify.app/social%20post/p10.jpg',
         'https://peggy-su-portfolio.netlify.app/social%20post/p10-1.jpg'] },
 { slug:'meitu',        title:'Meitu',            cat:'Product · Design', count:3,  view:'gallery',  color:['#E24E8C','#F29CC2'] },
-{ slug:'ai-video', title:'AI Video Ads', cat:'AI Video · TikTok / IG', count:11, view:'video', color:['#3E3A35','#7A746B'] }
+{ slug:'ai-video', title:'AI Video Ads', cat:'AI Video · TikTok / IG', count:8, view:'video', color:['#3E3A35','#7A746B'],
+  clips:[
+    { t:'Root Touch-Up',    m:'Japan · Hair Color' },
+    { t:'Hair Color Shift', m:'Thailand · Hair Color' },
+    { t:'Hairstyle Swap',   m:'Korea · Hairstyle' },
+    { t:'Sakura by Day',    m:'Japan · Sakura Series' },
+    { t:'Sakura by Night',  m:'Japan · Sakura Series' },
+    { t:'Sakura & Paws',    m:'Japan · Sakura Series' },
+    { t:'Sparkle Filter',   m:'Thailand · Filter' },
+    { t:'Retouch 101',      m:'Thailand · Tutorial' }
+  ] }
 ];
 
 // Sub-projects inside the Niusnews folder
@@ -1707,5 +1717,222 @@ document.addEventListener('keydown', e => {
   window.addEventListener('hashchange', openFromHash);
 })();
 </script>
+<!-- ===== CD 光碟盒影片封面 =====
+     覆蓋原本的 renderVideo()，所有 view:'video' 的專案都會套用。
+     光碟上是文字排版封面。在 PROJECTS 該專案加上 clips 陣列：
+     clips:[ { t:'Root Touch-Up', m:'Japan · Hair Color' }, ... ]
+     t = 光碟上的標題，m = 下方小字（市場 · 類別）。沒填就顯示 Clip 01。 -->
+<style>
+@property --cdv-light { syntax: '<angle>'; inherits: true; initial-value: 200deg; }
+
+.cdv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 44px 30px; max-width: 980px; margin: 0 auto; }
+.cdv { display: block; width: 100%; background: none; border: 0; padding: 0; cursor: pointer; color: inherit; font: inherit; text-align: center; -webkit-tap-highlight-color: transparent; }
+.cdv:focus-visible { outline: 1px solid #F7F6F2; outline-offset: 10px; border-radius: 6px; }
+
+.cdv-case { position: relative; display: block; aspect-ratio: 1 / 1; perspective: 1200px; animation: cdv-light 7s ease-in-out infinite alternate; animation-delay: var(--d, 0s); }
+@keyframes cdv-light { from { --cdv-light: 140deg; } to { --cdv-light: 270deg; } }
+
+.cdv-shell { position: absolute; inset: 0; border: 1px solid rgba(247,246,242,0.26); border-radius: 7px; background: rgba(255,255,255,0.025); }
+.cdv-shell::before { content: ""; position: absolute; inset: 3.6%; border: 0.5px solid rgba(247,246,242,0.16); border-radius: 4px; }
+.cdv-shell::after { content: ""; position: absolute; left: 41%; width: 18%; top: -1px; height: 6%; border: 1px solid rgba(247,246,242,0.26); border-top: 0; border-radius: 0 0 10px 10px; }
+.cdv-hub { position: absolute; left: 50%; top: 50%; width: 26%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
+  border: 0.5px solid rgba(247,246,242,0.22);
+  background: repeating-conic-gradient(rgba(247,246,242,0.22) 0 3deg, transparent 3deg 22.5deg);
+  -webkit-mask: radial-gradient(circle closest-side, transparent 40%, #000 42%); mask: radial-gradient(circle closest-side, transparent 40%, #000 42%); }
+
+.cdv-shadow, .cdv-disc { position: absolute; left: 7%; top: 7%; width: 86%; aspect-ratio: 1; border-radius: 50%;
+  -webkit-mask: radial-gradient(circle closest-side, transparent 12.4%, #000 12.8%); mask: radial-gradient(circle closest-side, transparent 12.4%, #000 12.8%); }
+.cdv-shadow { box-shadow: 0 18px 40px -10px rgba(0,0,0,0.7); }
+.cdv-disc { overflow: hidden; transition: transform 0.5s cubic-bezier(.25,.8,.25,1); }
+.cdv-l { position: absolute; inset: 0; border-radius: 50%; }
+.cdv-metal, .cdv-rainbow { -webkit-mask: radial-gradient(circle closest-side, transparent 35.6%, #000 36.2%); mask: radial-gradient(circle closest-side, transparent 35.6%, #000 36.2%); }
+.cdv-metal { background: conic-gradient(from var(--cdv-light), #c4c8cd 0deg, #f3f4f6 26deg, #9aa0a6 72deg, #e1e3e6 112deg, #9aa0a6 158deg, #f3f4f6 206deg, #9aa0a6 252deg, #e1e3e6 292deg, #9aa0a6 336deg, #c4c8cd 360deg); }
+.cdv-rainbow { opacity: 0.85; background: conic-gradient(from var(--cdv-light),
+  transparent 0deg 12deg, hsl(145 95% 52% / .85) 20deg, hsl(58 100% 62% / .9) 25deg, hsl(0 0% 100% / .95) 28deg,
+  hsl(318 100% 64% / .85) 32deg, hsl(255 100% 62% / .7) 40deg, transparent 54deg 192deg,
+  hsl(145 95% 52% / .7) 200deg, hsl(58 100% 62% / .8) 205deg, hsl(0 0% 100% / .9) 208deg,
+  hsl(318 100% 64% / .7) 212deg, hsl(255 100% 62% / .6) 220deg, transparent 234deg); }
+.cdv-clear { background: radial-gradient(circle closest-side,
+  rgba(228,232,238,0.30) 12.8%, rgba(228,232,238,0.30) 29%, rgba(150,156,164,0.5) 29.6%, rgba(240,242,245,0.4) 30.6%,
+  rgba(228,232,238,0.30) 34%, rgba(170,176,184,0.5) 35.4%, transparent 36.2%); }
+.cdv-print {
+  -webkit-mask: radial-gradient(circle closest-side, transparent 35.6%, #000 36.2%, #000 92.6%, transparent 93.2%);
+          mask: radial-gradient(circle closest-side, transparent 35.6%, #000 36.2%, #000 92.6%, transparent 93.2%); }
+.cdv-rot { position: absolute; inset: 0; animation: cdv-spin 14s linear infinite; animation-delay: var(--d, 0s); }
+@keyframes cdv-spin { to { transform: rotate(360deg); } }
+.cdv-label { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.cdv-label .paper { fill: #F2F0EA; }
+.cdv-label .ink { fill: #1C1B18; }
+.cdv-label .rule { fill: none; stroke: #1C1B18; stroke-width: 0.35; opacity: 0.55; }
+.cdv-label .num { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-weight: 300; font-size: 34px; letter-spacing: -0.02em; }
+.cdv-label .ttl { font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 400; font-size: 11.5px; letter-spacing: 0.01em; }
+.cdv-label .sub { font-family: 'Inter', system-ui, sans-serif; font-weight: 400; font-size: 4.3px; letter-spacing: 0.32em; text-transform: uppercase; opacity: 0.6; }
+.cdv-label .arc { font-family: 'Inter', system-ui, sans-serif; font-weight: 400; font-size: 4.6px; letter-spacing: 0.42em; text-transform: uppercase; opacity: 0.7; }
+/* every other disc prints ink-on-black for rhythm */
+.cdv.is-dark .cdv-label .paper { fill: #1C1B18; }
+.cdv.is-dark .cdv-label .ink { fill: #F2F0EA; }
+.cdv.is-dark .cdv-label .rule { stroke: #F2F0EA; opacity: 0.35; }
+.cdv-gloss { -webkit-mask: radial-gradient(circle closest-side, transparent 35.6%, #000 36.2%, #000 92.6%, transparent 93.2%); mask: radial-gradient(circle closest-side, transparent 35.6%, #000 36.2%, #000 92.6%, transparent 93.2%);
+  background: linear-gradient(calc(var(--cdv-light) - 60deg), transparent 38%, rgba(255,255,255,0.16) 50%, transparent 62%); }
+.cdv-rings { background: radial-gradient(circle closest-side, transparent 35.6%, rgba(0,0,0,0.3) 36.2%, transparent 37%,
+  transparent 92.6%, rgba(255,255,255,0.35) 93.1%, transparent 93.8%, transparent 98.4%, rgba(0,0,0,0.3) 99.4%); }
+
+.cdv-lid { position: absolute; inset: 0; border: 1px solid rgba(247,246,242,0.3); border-radius: 7px; pointer-events: none;
+  background: linear-gradient(118deg, transparent 30%, rgba(255,255,255,0.13) 42%, rgba(255,255,255,0.03) 47%, transparent 56%), rgba(225,232,240,0.05);
+  transform-origin: left center; transition: transform 0.6s cubic-bezier(.25,.8,.25,1), opacity 0.6s; }
+.cdv-lid::before { content: ""; position: absolute; left: 3%; top: 3%; bottom: 3%; width: 3.2%; border-right: 0.5px solid rgba(247,246,242,0.22); }
+.cdv:hover .cdv-lid { transform: rotateY(-24deg); }
+.cdv.is-open .cdv-lid { transform: rotateY(-158deg); opacity: 0; }
+.cdv.is-open .cdv-disc, .cdv.is-open .cdv-shadow { transform: scale(1.04); }
+
+.cdv-play { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%;
+  background: rgba(20,19,17,0.6); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border: 0.5px solid rgba(247,246,242,0.4);
+  display: grid; place-items: center; opacity: 0; transform: scale(0.85); transition: opacity 0.25s, transform 0.25s; }
+.cdv-play svg { width: 14px; height: 14px; fill: #F7F6F2; margin-left: 2px; }
+.cdv:hover .cdv-play, .cdv:focus-visible .cdv-play { opacity: 1; transform: none; }
+@media (hover: none) { .cdv-play { opacity: 0.9; transform: none; } }
+
+.cdv-cap { display: block; margin-top: 14px; font-family: var(--sans); font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink3); }
+.cdv-cap b { color: #F7F6F2; font-weight: 400; margin-right: 6px; }
+.cdv-hint { text-align: center; margin-top: 40px; font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink3); }
+
+/* player */
+.cdv-player { position: fixed; inset: 0; z-index: 10003; background: rgba(10,10,9,0.96); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 64px 80px 40px; }
+.cdv-player.open { display: flex; }
+.cdv-player video { max-width: 100%; max-height: calc(100vh - 150px); border-radius: 4px; background: #000; box-shadow: 0 26px 60px rgba(0,0,0,0.6); }
+.cdv-pcap { font-family: var(--sans); font-size: 0.64rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink3); }
+.cdv-pcap b { color: #F7F6F2; font-weight: 400; }
+.cdv-btn { position: fixed; width: 46px; height: 46px; border-radius: 50%; border: 0.5px solid rgba(247,246,242,0.3); background: rgba(20,19,17,0.55); color: #fff; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.cdv-btn:hover { background: #F7F6F2; color: #1C1B18; }
+.cdv-x { top: 18px; right: 20px; font-size: 18px; }
+.cdv-prevb { left: 18px; top: 50%; transform: translateY(-50%); }
+.cdv-nextb { right: 18px; top: 50%; transform: translateY(-50%); }
+
+@media (max-width: 768px) {
+  .cdv-grid { grid-template-columns: repeat(2, 1fr); gap: 30px 18px; }
+  .cdv-player { padding: 64px 12px 30px; }
+  .cdv-prevb, .cdv-nextb { top: auto; bottom: 18px; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cdv-rot, .cdv-case { animation: none; }
+  .cdv-lid, .cdv-disc { transition: none; }
+}
+</style>
+
+<script>
+(function () {
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let player, pVid, pCap, cur = null;
+
+  function buildPlayer() {
+    if (player) return;
+    player = document.createElement('div');
+    player.className = 'cdv-player';
+    player.setAttribute('aria-hidden', 'true');
+    player.innerHTML =
+      '<button class="cdv-btn cdv-x" aria-label="Close">&#x2715;</button>' +
+      '<button class="cdv-btn cdv-prevb" aria-label="Previous">&#8249;</button>' +
+      '<video controls playsinline></video>' +
+      '<div class="cdv-pcap"></div>' +
+      '<button class="cdv-btn cdv-nextb" aria-label="Next">&#8250;</button>';
+    document.body.appendChild(player);
+    pVid = player.querySelector('video');
+    pCap = player.querySelector('.cdv-pcap');
+    player.querySelector('.cdv-x').onclick = closePlayer;
+    player.querySelector('.cdv-prevb').onclick = () => step(-1);
+    player.querySelector('.cdv-nextb').onclick = () => step(1);
+    player.addEventListener('click', e => { if (e.target === player) closePlayer(); });
+    // capture phase so the portfolio overlay's own Esc / arrow handlers don't fire too
+    window.addEventListener('keydown', e => {
+      if (!player.classList.contains('open')) return;
+      if (e.key === 'Escape') closePlayer();
+      else if (e.key === 'ArrowRight') step(1);
+      else if (e.key === 'ArrowLeft') step(-1);
+      else return;
+      e.preventDefault(); e.stopImmediatePropagation();
+    }, true);
+  }
+
+  function openPlayer(p, i) {
+    buildPlayer();
+    cur = { p, i };
+    pVid.src = vidUrl(p, i);
+    pVid.poster = posterUrl(p, i);
+    const c = clipInfo(p, i);
+    pCap.innerHTML = '<b>' + esc(c.t) + '</b> &nbsp;·&nbsp; ' + (c.m ? esc(c.m) + ' &nbsp;·&nbsp; ' : '') + pad(i + 1) + ' / ' + pad(p.count);
+    player.classList.add('open');
+    player.setAttribute('aria-hidden', 'false');
+    const pr = pVid.play(); if (pr && pr.catch) pr.catch(() => {});
+  }
+  function step(d) { if (!cur) return; openPlayer(cur.p, (cur.i + d + cur.p.count) % cur.p.count); }
+  function closePlayer() {
+    if (!player) return;
+    pVid.pause(); pVid.removeAttribute('src'); pVid.load();
+    player.classList.remove('open');
+    player.setAttribute('aria-hidden', 'true');
+    document.querySelectorAll('.cdv.is-open').forEach(t => t.classList.remove('is-open'));
+    if (cur) { const t = document.querySelector('.cdv[data-i="' + cur.i + '"]'); if (t) t.focus(); }
+    cur = null;
+  }
+
+  function clipInfo(p, i) {
+    const c = p.clips && p.clips[i];
+    if (!c) return { t: 'Clip ' + pad(i + 1), m: '' };
+    return typeof c === 'string' ? { t: c, m: '' } : { t: c.t || ('Clip ' + pad(i + 1)), m: c.m || '' };
+  }
+
+  function labelSVG(p, i) {
+    const id = 'cdvarc-' + p.slug + '-' + i;
+    const c = clipInfo(p, i);
+    const ring = (p.cat + ' \u00b7 ' + p.title + ' \u00b7 Peggy Su \u00b7 ').repeat(3);
+    const dot = (p.color && p.color[0]) || '#9A9890';
+    return '<svg class="cdv-label" viewBox="0 0 200 200" aria-hidden="true">' +
+      '<defs><path id="' + id + '" d="M100,100 m-84,0 a84,84 0 1,1 168,0 a84,84 0 1,1 -168,0"/></defs>' +
+      '<circle class="paper" cx="100" cy="100" r="100"/>' +
+      '<circle class="rule" cx="100" cy="100" r="77"/>' +
+      '<circle class="rule" cx="100" cy="100" r="40"/>' +
+      '<text class="arc ink"><textPath href="#' + id + '" textLength="520">' + esc(ring) + '</textPath></text>' +
+      '<text class="num ink" x="100" y="64" text-anchor="middle">' + pad(i + 1) + '</text>' +
+      '<circle cx="100" cy="137" r="1.6" fill="' + dot + '"/>' +
+      '<text class="ttl ink" x="100" y="153" text-anchor="middle">' + esc(c.t) + '</text>' +
+      '<text class="sub ink" x="100" y="162" text-anchor="middle">' + esc(c.m || (pad(i + 1) + ' / ' + pad(p.count))) + '</text>' +
+      '</svg>';
+  }
+
+  window.renderVideo = function (p, from) {
+    stageEl().innerHTML = '<div class="pv-inner">' + headBlock(p, from) +
+      '<div class="cdv-grid" id="pv-vids"></div><p class="cdv-hint">Click a disc to play</p></div>';
+    const box = document.getElementById('pv-vids');
+    for (let i = 0; i < p.count; i++) {
+      const t = document.createElement('button');
+      t.type = 'button';
+      t.className = 'cdv';
+      t.dataset.i = i;
+      t.style.setProperty('--d', (-i * 1.7) + 's');
+      t.setAttribute('aria-label', 'Play ' + clipInfo(p, i).t);
+      t.innerHTML =
+        '<span class="cdv-case">' +
+          '<span class="cdv-shell"></span><span class="cdv-hub"></span><span class="cdv-shadow"></span>' +
+          '<span class="cdv-disc">' +
+            '<span class="cdv-l cdv-metal"></span><span class="cdv-l cdv-rainbow"></span><span class="cdv-l cdv-clear"></span>' +
+            '<span class="cdv-l cdv-print"><span class="cdv-rot">' + labelSVG(p, i) + '</span></span>' +
+            '<span class="cdv-l cdv-gloss"></span><span class="cdv-l cdv-rings"></span>' +
+          '</span>' +
+          '<span class="cdv-lid"></span>' +
+          '<span class="cdv-play"><svg viewBox="0 0 16 16"><path d="M4 2.6v10.8a.8.8 0 0 0 1.2.7l8.6-5.4a.8.8 0 0 0 0-1.4L5.2 1.9A.8.8 0 0 0 4 2.6z"/></svg></span>' +
+        '</span>' +
+        '<span class="cdv-cap"><b>' + pad(i + 1) + '</b>' + esc(clipInfo(p, i).t) + '</span>';
+      if (i % 2 === 1) t.classList.add('is-dark');
+
+      t.addEventListener('click', () => {
+        t.classList.add('is-open');
+        setTimeout(() => openPlayer(p, i), reduced ? 0 : 480);
+      });
+      box.appendChild(t);
+    }
+  };
+})();
+</script>
+<!-- ===== /CD 光碟盒影片封面 ===== -->
 </body>
 </html>
